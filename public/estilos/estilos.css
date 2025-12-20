@@ -71,3 +71,9 @@ body{
   color: inherit; /* mantiene el color del texto del entorno */
 }
 
+.botonera{
+  position: absolute;
+  right: 15px;
+  bottom: 10px;
+}
+

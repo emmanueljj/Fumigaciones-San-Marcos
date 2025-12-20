@@ -68,6 +68,10 @@ return new class extends Migration
             $table->text('observacion')->nullable();
             $table->string('foto')->nullable();
 
+            //clave foranea de servicio
+            $table->unsignedBigInteger('id_servicio')->nullable();
+            $table->foreign('id_servicio')->references('id_servicio')->on('servicios')->onDelete('set null');
+
             // Claves foráneas a productos
             $table->unsignedBigInteger('pr1')->nullable();
             $table->unsignedBigInteger('pr2')->nullable();

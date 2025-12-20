@@ -21,8 +21,8 @@ class Meses extends Model
     }
 
     // Relación: un mes tiene muchos servicios
-    // public function servicios()
-    // {
-    //     return $this->hasMany(Servicio::class, 'id_mes');
-    // }
+    public function servicios()
+    {
+        return $this->hasMany(Servicio::class, 'id_mes');
+    }
 }

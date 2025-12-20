@@ -1,39 +1,50 @@
 @extends('layouts.plantilla')
 
-@section('tittle', 'Ag_tecnicos')
+@section('tittle', 'Editar Técnico')
 
 @section('titular')
 <x-navbar>
-    Agregar técnicos  
+    Editar técnicos  
 </x-navbar>
 @endSection
 
 @section('contenido')
-  <div class="form-container p-4 bg-light rounded shadow-sm mx-auto formulario-content" style="max-width: 400px;">
+<style>
+    /* Estilos reusables Dark */
+    .form-card-minimal { background-color: #1a1c20; border: 1px solid #2d3035; border-radius: 16px; }
+    .input-dark { background-color: #0f1012; border: 1px solid #2d3035; color: #e0e0e0; border-radius: 8px; padding: 0.6rem 1rem; }
+    .input-dark:focus { background-color: #141619; border-color: #4a4d55; color: #fff; outline: none; }
+    .form-label-dark { color: #a0a0a0; font-size: 0.85rem; margin-bottom: 0.4rem; }
+</style>
+
+<div class="container py-4">
+  <div class="form-card-minimal p-4 mx-auto" style="max-width: 400px;">
     
-    <!-- Formulario -->
-    <form action="/upTec" method="POST" enctype="multipart/form-data">
-      @csrf
-      <div class="mb-3">
-        <label for="nombre" class="form-label">Nombre</label>
-        <input type="text" class="form-control" id="nombre" name="nombre" value="{{ $tecnico->nombre }}">
-      </div>
+    <div class="text-center mb-4">
+        <h5 class="text-light"><i class="fa-solid fa-user-pen me-2"></i>Editar Datos</h5>
+    </div>
 
-      <div class="mb-3">
-        <label for="id_tec" class="form-label">Clave</label>
-        <input type="text" class="form-control" id="id_tec" name="id_tec" value="{{ $tecnico->id_tec }}">
-      </div>
+    <form action="/upTecnico/{{$tec_mod->id_tec}}" method="POST" enctype="multipart/form-data">
+        @csrf
+        @method('PUT')  
+        
+        <div class="mb-3">
+            <label for="nombre" class="form-label-dark">Nombre Completo</label>
+            <input type="text" class="form-control input-dark" id="nombre" name="nombre" value="{{ $tec_mod->nombre }}">
+        </div>
 
-      <div class="text-end">
-        <button type="submit" class="btn btn-primary">
-          <i class="fa-solid fa-floppy-disk"></i>
+        <div class="mb-4">
+            <label for="clave" class="form-label-dark">Clave de Empleado</label>
+            <div class="input-group">
+                <span class="input-group-text bg-dark border-secondary text-muted" style="border-color: #2d3035;">#</span>
+                <input type="text" class="form-control input-dark" id="clave" name="clave" value="{{ $tec_mod->clave }}">
+            </div>
+        </div>
+
+        <button type="submit" class="btn w-100" style="background-color: #1c2a35; color: #6dacd6; border: 1px solid #243b4a;">
+            <i class="fa-solid fa-floppy-disk me-2"></i> Guardar Cambios
         </button>
-      </div>
     </form>
   </div>
-
+</div>
 @endSection
-
-
-
-

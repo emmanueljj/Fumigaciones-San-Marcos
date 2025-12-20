@@ -10,31 +10,36 @@
     </x-navbar>
 @endsection
 
-
 @section('contenido')
-  <div class="form-container p-4 bg-light rounded shadow-sm mx-auto formulario-content" style="max-width: 400px;">
+<div class="container py-4">
+  <div class="form-card-minimal p-4 mx-auto" style="max-width: 450px; background-color: #1a1c20; border: 1px solid #2d3035; border-radius: 16px;">
     
-    <!-- Formulario -->
+    <div class="text-center mb-4">
+        <h5 class="text-light">Nuevo Periodo</h5>
+        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">{{ $empresa->nombre }}</span>
+    </div>
+
     <form action="/addMes/{{$empresa->id_empresa}}" method="POST" enctype="multipart/form-data">
     @csrf
 
-      <div class="mb-3">
-        <label for="fecha_I" class="form-label">Fecha Inicio</label>
-        <input type="date" name="fecha_I" id="fechaInicio" class="form-control" >
+      <div class="row g-3 mb-4">
+          <div class="col-6">
+            <label for="fecha_I" class="form-label-dark text-muted small">Desde</label>
+            <input type="date" name="fecha_I" id="fechaInicio" class="form-control input-dark" 
+                   style="background-color: #0f1012; border: 1px solid #2d3035; color: #a0a0a0; color-scheme: dark;">
+          </div>
+
+          <div class="col-6">
+                <label for="fecha_f" class="form-label-dark text-muted small">Hasta</label>
+                <input type="date" name="fecha_f" id="fechaCorte" class="form-control input-dark"
+                       style="background-color: #0f1012; border: 1px solid #2d3035; color: #a0a0a0; color-scheme: dark;">
+          </div>
       </div>
 
-      <div class="mb-3">
-            <label for="fecha_f" class="form-label">Fecha</label>
-            <input type="date" name="fecha_f" id="fechaCorte" class="form-control">
-      </div>
-
-      <div class="text-end">
-        <button type="submit" class="btn btn-primary">
-          <i class="fa-solid fa-floppy-disk"></i>
-        </button>
-      </div>
+      <button type="submit" class="btn w-100" style="background-color: #1c2a35; color: #6dacd6; border: 1px solid #243b4a;">
+          <i class="fa-solid fa-calendar-plus me-2"></i> Crear Periodo
+      </button>
     </form>
   </div>
+</div>
 @endSection
-
-{{-- value="{{ date('Y-m-d') }}" PARA RELLENAR FECHA--}}

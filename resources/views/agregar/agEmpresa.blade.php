@@ -9,71 +9,98 @@
 @endsection
 
 @section('contenido')
-    <div class="form-container p-4 bg-light rounded shadow-sm mx-auto formulario-content" style="max-width: 400px;">
+<style>
+    /* Estilos específicos para la foto */
+    .profile-upload-container {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        margin: 0 auto;
+    }
+    .profile-img-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 2px solid #2d3035;
+        background-color: #0f1012;
+    }
+    .btn-edit-photo {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background-color: #6dacd6;
+        color: #1a1c20;
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.2s;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .btn-edit-photo:hover {
+        transform: scale(1.1);
+        background-color: #fff;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="form-card-minimal p-4 mx-auto" style="max-width: 400px; background-color: #1a1c20; border: 1px solid #2d3035; border-radius: 16px;">
+        
         <form action="/addEmpresa" method="POST" enctype="multipart/form-data">
             @csrf
 
-            <!-- Imagen de perfil con input -->
-            <div class="inputImg mb-3 text-center position-relative">
-                <img src="{{ url('imagenes/profile.jpg') }}" id="profileImg" class="perfilImg mb-2" alt="Foto de perfil">
-                
-                <input type="file" id="fotoEmpresa" accept="image/*" name="fotoEmpresa" class="d-none">
-                
-                <button type="button" id="btnEditFoto" class="btn btn-primary btn-sm editFoto rounded-circle p-1 position-absolute" style="height: 30px; right: 10px;" aria-label="Editar foto">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                </button>
+            <div class="mb-4 text-center">
+                <div class="profile-upload-container">
+                    <img src="{{ url('imagenes/profile.jpg') }}" id="profileImg" class="profile-img-preview" alt="Logo Empresa">
+                    
+                    <input type="file" id="fotoEmpresa" accept="image/*" name="fotoEmpresa" class="d-none">
+                    
+                    <button type="button" id="btnEditFoto" class="btn-edit-photo" aria-label="Subir foto">
+                        <i class="fa-solid fa-camera fa-xs"></i>
+                    </button>
+                </div>
+                <p class="text-muted small mt-2">Logotipo de la empresa</p>
             </div>
 
-            <!-- Campo: Nombre -->
             <div class="mb-3">
-                <label for="nombre" class="form-label">Nombre</label>
-                <input type="text" name="nombre" class="form-control" id="nombre">
+                <label for="nombre" class="form-label-dark small fw-bold">Nombre Comercial</label>
+                <input type="text" name="nombre" class="form-control input-dark" id="nombre" 
+                       style="background-color: #0f1012; border: 1px solid #2d3035; color: #fff;">
             </div>
 
-            <!-- Campo: Encargado -->
-            <div class="mb-3">
-                <label for="encargado" class="form-label">Encargado</label>
-                <input type="text" name="encargado" class="form-control" id="encargado">
+            <div class="mb-4">
+                <label for="encargado" class="form-label-dark small fw-bold">Nombre del Encargado</label>
+                <input type="text" name="encargado" class="form-control input-dark" id="encargado"
+                       style="background-color: #0f1012; border: 1px solid #2d3035; color: #fff;">
             </div>
 
-            <!-- Botón de envío -->
-            <div class="text-end">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fa-solid fa-floppy-disk"></i>
-                </button>
-            </div>
+            <button type="submit" class="btn w-100" style="background-color: #1c2a35; color: #6dacd6; border: 1px solid #243b4a;">
+                <i class="fa-solid fa-floppy-disk me-2"></i> Guardar Empresa
+            </button>
         </form>
     </div>
-@endsection
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // 1. Obtener las referencias a los elementos
     const btnEditFoto = document.getElementById('btnEditFoto');
     const fotoInput = document.getElementById('fotoEmpresa');
     const profileImage = document.getElementById('profileImg');
 
-    // 2. Lógica para activar el input de archivo al hacer clic en el botón azul
-    btnEditFoto.addEventListener('click', function() {
-        // Simula un clic en el input de tipo 'file' oculto
-        fotoInput.click();
-    });
+    btnEditFoto.addEventListener('click', function() { fotoInput.click(); });
 
-    // 3. Lógica para previsualizar la imagen cuando el usuario selecciona un archivo
     fotoInput.addEventListener('change', function(event) {
-        // Asegúrate de que se seleccionó un archivo
         if (event.target.files && event.target.files[0]) {
             const reader = new FileReader();
-
-            // Esto se ejecuta una vez que el archivo se ha cargado en la memoria
-            reader.onload = function(e) {
-                // Actualiza el atributo 'src' de la imagen con la URL del archivo local
-                profileImage.src = e.target.result;
-            }
-
-            // Lee el archivo como una URL de datos (Data URL)
+            reader.onload = function(e) { profileImage.src = e.target.result; }
             reader.readAsDataURL(event.target.files[0]);
         }
     });
 });
 </script>
+@endsection
