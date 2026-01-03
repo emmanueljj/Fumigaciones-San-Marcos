@@ -10,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 class productosController extends Controller
 {
     public function productos() {
-            $productos = productos::orderBy('updated_at','desc')->get();
+            $productos = productos::orderBy('updated_at','desc')->paginate(10);
             return view('productos', compact('productos'));
     }
     
@@ -116,4 +116,20 @@ class productosController extends Controller
                         ->with('error', 'Error al eliminar el registro');
                 }
             }
+
+    // Ejemplo de cómo debería verse la respuesta en tu Controlador
+    public function buscar(Request $request) {
+        $term = $request->q;
+        $productos = productos::where('nombre', 'LIKE', "%$term%")
+            ->get(['id_pr', 'nombre', 'concentracion']);
+
+        return response()->json($productos->map(function($p) {
+            return [
+                'id' => $p->id_pr,
+                'text' => $p->nombre,
+                'concentracion' => $p->concentracion // <-- ESTO ES VITAL
+            ];
+        }));
+    }
+    
 }

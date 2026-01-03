@@ -125,6 +125,32 @@
         .action-group { padding-left: 0.5rem; border: none; }
         .company-manager { display: none; } /* Ocultar encargado en móviles muy pequeños para limpiar vista */
     }
+
+    /* Ajuste para que los botones de paginación sean oscuros */
+    .pagination .page-item .page-link {
+        background-color: rgba(26, 28, 32, 0.6) !important;
+        backdrop-filter: blur(8px);
+        border: 1px solid #2d3035 !important;
+        color: #e0e0e0 !important;
+
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: #6dacd6 !important; /* Azul San Marcos */
+        border-color: #6dacd6 !important;
+        color: #1a1c20 !important;
+    }
+
+    .pagination .page-item.disabled .page-link {
+        background-color: #0f1012 !important;
+        color: #5c6068 !important;
+    }
+
+    .contenedor_paginacion{
+        position: relative;
+        display: flex;
+        justify-content: space-around;
+    }
 </style>
 
 <div class="container pb-5">
@@ -181,6 +207,13 @@
         @endforelse
 
     </div>
+
+    <div class="d-flex justify-content-center mt-4 contenedor_paginacion">
+    {{ $empresas->links() }}
+    </div>
+
 </div>
+
+
 
 @endSection

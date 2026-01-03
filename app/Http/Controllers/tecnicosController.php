@@ -10,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 class tecnicosController extends Controller
 {
     public function tecnicos() {
-            $tecnicos = tecnicos::orderBy('updated_at','desc')->get();
+            $tecnicos = tecnicos::orderBy('updated_at','desc')->paginate(10);
             return view('tecnicos', compact('tecnicos'));
     }
 
@@ -89,17 +89,25 @@ class tecnicosController extends Controller
     }
    // =================================================================
     public function delTecnicos($id_tec){
-                try {
-                    $registro = tecnicos::findOrFail($id_tec);
-                    $registro->delete();
-                    
-                    return redirect()->back()
-                        ->with('success', 'Registro eliminado correctamente');
-                } catch (\Exception $e) {
-                    return redirect()->back()
-                        ->with('error', 'Error al eliminar el registro');
-                }
-            }
-        
+        try {
+            $registro = tecnicos::findOrFail($id_tec);
+            $registro->delete();
+            
+            return redirect()->back()
+                ->with('success', 'Registro eliminado correctamente');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Error al eliminar el registro');
+        }
     }
+
+    public function buscar(Request $request) {
+        $q = $request->get('q');
+        return tecnicos::select('id_tec as id', 'nombre as text')
+            ->where('nombre', 'LIKE', "%$q%")
+            ->limit(10)
+            ->get();
+        }
+
+}
 

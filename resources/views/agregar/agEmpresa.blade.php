@@ -64,7 +64,7 @@
                         <i class="fa-solid fa-camera fa-xs"></i>
                     </button>
                 </div>
-                <p class="text-muted small mt-2">Logotipo de la empresa</p>
+                <p class="small mt-2">Logotipo de la empresa</p>
             </div>
 
             <div class="mb-3">

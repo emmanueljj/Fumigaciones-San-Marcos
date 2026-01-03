@@ -10,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 class empresasController extends Controller
 {
     public function index() {
-            $empresas = empresas::orderBy('updated_at','desc')->get();
+            $empresas = empresas::orderBy('updated_at','desc')->paginate(10);
             return view('index', compact('empresas'));
     }
 

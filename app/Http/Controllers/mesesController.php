@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\empresas;
 use Illuminate\Http\Request;
 use App\Models\Meses;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
 
@@ -12,40 +13,41 @@ class mesesController extends Controller
 {
     //  * Valida los campos de fecha (que no estén vacíos y que fecha_f sea posterior a fecha_I)
 
+   // 1. Limpiamos la validación básica con mensajes personalizados directos
     private function validarCamposFechas(Request $request) {
+        $rules = [
+            'fecha_I' => 'required|date',
+            'fecha_f' => 'required|date|after:fecha_I',
+        ];
+
+        $messages = [
+            'fecha_I.required' => 'La fecha de inicio es obligatoria.',
+            'fecha_f.required' => 'La fecha de fin es obligatoria.',
+            'fecha_f.after'    => 'La fecha de finalización debe ser posterior a la de inicio.',
+        ];
+
         try {
-            $request->validate([
-                'fecha_I' => 'required|date',
-                'fecha_f' => 'required|date|after:fecha_I',
-            ]);
-            return null; // Sin errores
+            $request->validate($rules, $messages);
+            return null; 
         } catch (ValidationException $e) {
-            $errors = $e->errors();
-            $mensaje = 'Error de validación de fechas.';
-            
-            if (isset($errors['fecha_I']) || isset($errors['fecha_f']) && (
-                in_array('El campo fecha I es obligatorio.', $errors['fecha_I'] ?? []) || 
-                in_array('El campo fecha f es obligatorio.', $errors['fecha_f'] ?? [])
-            )) {
-                $mensaje = 'Debes completar ambas fechas. No pueden estar vacías.';
-            } elseif (isset($errors['fecha_f'])) {
-                $mensaje = 'La fecha de finalización debe ser posterior a la fecha de inicio.';
-            }
-            
-            return $mensaje;
+            // Retornamos el primer error encontrado de forma limpia
+            return collect($e->errors())->flatten()->first();
         }
     }
 
-    //  * Verifica que las fechas estén en meses calendario distintos
 
-    private function validarMesesDistintos(Carbon $inicio, Carbon $corte)
+    private function validarPeriodoMensual(Carbon $inicio, Carbon $corte)
     {
-        if ($inicio->format('Y-m') === $corte->format('Y-m')) {
-            return 'Las fechas deben estar en meses calendario distintos. El periodo debe cruzar al menos un límite de mes.';
-        }
-        return null; // Sin errores
-    }
+        // Calculamos lo que sería un mes exacto menos un día
+        $finEsperado = (clone $inicio)->addMonthNoOverflow()->subDay();
 
+        if (!$corte->isSameDay($finEsperado)) {
+            return "Para una suscripción mensual, si inicia el " . $inicio->format('d/m/Y') . 
+                ", el periodo debe terminar exactamente el " . $finEsperado->format('d/m/Y') . 
+                " (un día antes de cumplir el mes).";
+        }
+        return null;
+    }
 
     //  Verifica que no haya solapamiento con periodos existentes
 
@@ -53,20 +55,18 @@ class mesesController extends Controller
     {
         $query = Meses::where('id_empresa', $id_empresa)
             ->where(function ($query) use ($inicio, $corte) {
-                $query->whereDate('fecha_f', '>=', $inicio->toDateString())
-                    ->whereDate('fecha_I', '<=', $corte->toDateString());
+                // Un periodo solapa si su inicio es ANTES del fin solicitado 
+                // Y su fin es DESPUÉS del inicio solicitado.
+                $query->where('fecha_I', '<', $corte->toDateString())
+                    ->where('fecha_f', '>', $inicio->toDateString());
             });
         
-        // Si estamos editando, excluir el registro actual
-        if ($excluirId) {
-            $query->where('id_mes', '!=', $excluirId);
-        }
+        if ($excluirId) $query->where('id_mes', '!=', $excluirId);
         
         if ($query->exists()) {
-            return 'El periodo ingresado se solapa con un mes ya registrado para esta empresa. Por favor, ajuste las fechas.';
+            return 'Ya existe un periodo registrado que cubre parte de estas fechas.';
         }
-        
-        return null; // Sin errores
+        return null;
     }
 
 
@@ -74,23 +74,24 @@ class mesesController extends Controller
 
     private function validarFechas(Request $request, $id_empresa, $excluirId = null)
     {
-        // 1. Validar campos básicos
+        // Paso A: Validar presencia y formato básico
         $error = $this->validarCamposFechas($request);
         if ($error) return $error;
         
-        // 2. Parsear fechas
+        // Paso B: Convertir a Carbon UNA SOLA VEZ para todo el proceso
         $inicio = Carbon::parse($request->fecha_I)->startOfDay();
         $corte = Carbon::parse($request->fecha_f)->endOfDay();
         
-        // 3. Validar meses distintos
-        $error = $this->validarMesesDistintos($inicio, $corte);
+        // Paso C: Validar lógica de mes (Suscripción)
+        // AHORA PASAMOS LOS OBJETOS CARBON, NO STRINGS
+        $error = $this->validarPeriodoMensual($inicio, $corte);
         if ($error) return $error;
         
-        // 4. Validar solapamiento
+        // Paso D: Validar que no choque con otros registros
         $error = $this->validarSolapamiento($id_empresa, $inicio, $corte, $excluirId);
         if ($error) return $error;
         
-        return null; // Todo OK
+        return null;
     }
   // =================================================================
 
@@ -183,5 +184,27 @@ class mesesController extends Controller
             return redirect()->back()
                 ->with('error', 'Error al eliminar el mes');
         }
+    }
+   // =================================================================
+    public function generarPDF($id_mes) {
+        // 1. Obtenemos el mes con sus servicios y las actividades de cada servicio
+        // Usamos 'with' para traer las relaciones en cascada
+        $mes = Meses::with(['servicios.actividades'])->findOrFail($id_mes);
+        
+        // 2. Obtenemos la empresa para el encabezado
+        $empresa = Empresas::findOrFail($mes->id_empresa);
+
+        // 3. Cargamos la vista especial para el PDF pasándole los datos
+        $pdf = PDF::loadView('pdf.reporte_mensual', [
+            'mes' => $mes,
+            'empresa' => $empresa,
+            'servicios' => $mes->servicios // Esto ya contiene las actividades por la carga de arriba
+        ]);
+
+        // Configuración opcional: Papel A4 vertical
+        $pdf->setPaper('a4', 'portrait');
+
+        // 4. Retornamos el PDF para previsualizarlo
+        return $pdf->stream("Reporte_{$empresa->nombre}_{$mes->nombre}.pdf");
     }
 }

@@ -4,9 +4,6 @@
       
       <form class="row w-100 justify-content-center gx-2" role="search">
         
-        <div class="col-12 col-md-6 mb-2 mb-md-0">
-          <input class="form-control input-dark-minimal" type="search" placeholder="Empresa" aria-label="Search">
-        </div>
 
 
         <div class="col-6 col-md-1">

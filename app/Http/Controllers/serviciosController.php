@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 use App\Models\meses;
+use Illuminate\Support\Facades\Storage;
 use App\Models\servicio;
 
 
@@ -40,7 +41,7 @@ class serviciosController extends Controller
         try {
             $request->validate([
                 'fecha' => 'required|date',
-                'vb_nombre' => 'nullable|string|max:255',
+                'vb_nombre' => 'nullable|string|max:30',
                 'vb_firma' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // 2MB máximo
             ]);
         } catch (ValidationException $e) {
@@ -88,6 +89,45 @@ class serviciosController extends Controller
         $servicio = Servicio::findOrFail($id_servicio);
         return view('editar.edServicios', compact('id_mes', 'mes', 'empresa','servicio'));
     }
+
+
+public function updateSer(Request $request, $id_servicio) 
+{
+    // 1. Validación (Laravel redirige automáticamente si falla, pero mantenemos tu lógica)
+    $request->validate([
+        'fecha' => 'required|date',
+        'vb_nombre' => 'required|string|max:30',
+        'vb_firma' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+    ]);
+
+    // 2. Encontrar el registro actual
+    $serv_new = servicio::findOrFail($id_servicio);
+
+    // 3. Preparar los datos básicos (solo texto y fecha)
+    $datos = [
+        'fecha'     => $request->fecha,
+        'vb_nombre' => $request->vb_nombre,
+    ];
+
+    // 4. Lógica para la firma: Solo si se subió un archivo nuevo
+    if ($request->hasFile('vb_firma')) {
+        
+        // BORRAR FIRMA ANTERIOR:
+        if ($serv_new->vb_firma && Storage::disk('public')->exists($serv_new->vb_firma)) {
+            Storage::disk('public')->delete($serv_new->vb_firma);
+        }
+
+        // GUARDAR FIRMA NUEVA:
+        $datos['vb_firma'] = $request->file('vb_firma')->store('firmas', 'public');
+    }
+
+    // 5. Actualizar solo con los campos del arreglo $datos
+    // Si no hubo firma nueva, 'vb_firma' no va en el arreglo y no se intenta poner en null
+    $serv_new->update($datos);
+
+    return redirect('/servicios/' . $serv_new->id_mes)
+        ->with('success', 'Servicio actualizado correctamente.');
+}
 
     public function delServicio($id_servicio){
                 try {

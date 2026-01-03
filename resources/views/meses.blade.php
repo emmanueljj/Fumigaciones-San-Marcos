@@ -127,21 +127,7 @@
         pointer-events: auto;
     }
 
-    /* Botones Minimalistas */
-    .btn-void {
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.1);
-        color: #888;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s;
-        cursor: pointer;
-        backdrop-filter: blur(5px);
-    }
+
 
     .btn-void:hover {
         background: #6dacd6;
@@ -170,6 +156,28 @@
         z-index: 0;
     }
 
+        .btn-void-pdf,.btn-void, .btn-void-delete {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #888;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+        cursor: pointer;
+        backdrop-filter: blur(5px);
+    }
+
+    .btn-void-pdf:hover {
+        background: #76d66d;
+        border-color: #89d66d;
+        color: #fff;
+        box-shadow: 0 0 15px rgba(109, 172, 214, 0.4);
+    }
+    
     /* ESTADO VACÍO (Void State) */
     .void-state {
         text-align: center;
@@ -222,6 +230,10 @@
                     <div class="action-orbit">
                         <a href="/edMes/{{$mes->id_mes}}" class="btn-void" title="Editar">
                             <i class="fa-solid fa-pen"></i>
+                        </a>
+
+                        <a href="/mesPDF/{{$mes->id_mes}}" class="btn-void-pdf" title="pdf">
+                            <i class="fa-regular fa-file-pdf"></i>
                         </a>
                         
                         <form action="/delMes/{{$mes->id_mes}}" method="POST" class="d-inline">

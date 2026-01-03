@@ -74,11 +74,7 @@
                         Editar Servicio
                     </h4>
 
-                    {{-- 
-                        NOTA: Ajusta la ruta '/updateServicio/' según tus rutas reales en web.php.
-                        Usualmente se usa route('servicios.update', $servicio->id)
-                    --}}
-                    <form action="/updateServicio/{{ $servicio->id }}" method="POST" enctype="multipart/form-data">
+                    <form action="/updateServicio/{{ $servicio->id_servicio }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT') {{-- Importante para actualizaciones --}}
 
@@ -122,15 +118,8 @@
                             
                             <div class="text-center mb-3">
                                 <div class="firma-preview-dark" id="firmaPreview">
-                                    {{-- Lógica: Si ya tiene firma, la mostramos. Si no, mostramos el icono --}}
-                                    @if($servicio->vb_firma)
-                                        {{-- Asegúrate que la ruta 'storage/' sea correcta según tu filesystem --}}
                                         <img src="{{ asset('storage/' . $servicio->vb_firma) }}" alt="Firma Actual" style="max-height: 120px;">
                                         <p class="text-secondary opacity-50 mt-2 small">Firma actual guardada</p>
-                                    @else
-                                        <i class="fa-solid fa-signature text-secondary opacity-50" style="font-size: 2.5rem;"></i>
-                                        <p class="text-secondary opacity-50 mt-2 small">Sin firma registrada</p>
-                                    @endif
                                 </div>
                             </div>
 

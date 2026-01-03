@@ -25,4 +25,8 @@ class Meses extends Model
     {
         return $this->hasMany(Servicio::class, 'id_mes');
     }
+    
+    public function actividades() {
+        return $this->hasMany(Actividades::class, 'id_servicio');
+    }
 }

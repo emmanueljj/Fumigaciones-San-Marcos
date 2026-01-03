@@ -80,5 +80,6 @@
     {{-- Bootstrap local --}}
     <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
     <x-modal-error :mensaje="session('errorMensaje') ?? ''" :activar="session('mostrarModal') ?? false" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 </html>
