@@ -3,9 +3,9 @@
 @section('title', 'Agregar Actividad')
 
 @section('titular')
-<x-navbar :id_mes="$id_mes" :empresa="$empresa">
+<x-navbar-3 :id_mes="$id_mes" :empresa="$empresa">
     Nueva Actividad
-</x-navbar>
+</x-navbar-3>
 @endsection
 
 @section('contenido')

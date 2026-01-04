@@ -16,11 +16,6 @@
          class="nav-link-minimal {{ $slot == 'Productos' ? 'nav-link-active' : 'nav-link-muted' }}">
         Productos
       </a>
-
-      <a href="{{ url('ag_Meses/' . $empresa->id_empresa) }}" class="btn btn-dark-minimal w-10">
-        <i class="fa-solid fa-plus"></i>
-      </a>  
-
     </div>
   </div>
 

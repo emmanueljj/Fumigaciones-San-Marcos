@@ -3,9 +3,9 @@
 @section('title', 'Agregar Actividad')
 
 @section('titular')
-<x-navbar :id_mes="$id_mes" :empresa="$empresa">
+<x-navbar-3 :id_mes="$id_mes" :empresa="$empresa">
     Nueva Actividad
-</x-navbar>
+</x-navbar-3>
 @endsection
 
 @section('contenido')
@@ -218,7 +218,7 @@
     </div>
 </div>
 
-{{-- Añade esto antes del script de jquery-ui --}}
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 
@@ -270,78 +270,78 @@
     $(document).ready(function() {
 
     // 1. FUNCIÓN DE VALIDACIÓN Y ALERT (Para reutilizar en ambos)
-    function validarSeleccion(event, ui) {
-        if (!ui.item) {
-            // Limpiamos los valores
-            $(this).val(""); 
-            $(this).next('input[type="hidden"]').val("");
+        function validarSeleccion(event, ui) {
+            if (!ui.item) {
+                // Limpiamos los valores
+                $(this).val(""); 
+                $(this).next('input[type="hidden"]').val("");
 
-            // Efecto visual: Borde rojo temporal
-            $(this).css('border-color', '#d66d6d');
+                // Efecto visual: Borde rojo temporal
+                $(this).css('border-color', '#d66d6d');
 
-            // Alert (SweetAlert2 o tradicional)
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Selección inválida',
-                    text: 'Debes elegir una opción de la lista desplegable.',
-                    confirmButtonColor: '#6dacd6',
-                    background: '#1a1c20',
-                    color: '#e0e0e0'
-                });
-            } else {
-                alert("¡Atención! Debes seleccionar un elemento de la lista desplegable.");
-            }
-        } else {
-            // Si es válido, restauramos el color del borde
-            $(this).css('border-color', '#2d3035');
-        }
-    }
-
-    // 2. CONFIGURACIÓN BASE (AJAX y lógica común)
-    const baseConfig = {
-        minLength: 2,
-        source: function(request, response) {
-            $.ajax({
-                url: $(this.element).data('url'),
-                dataType: "json",
-                data: { q: request.term },
-                success: function(data) {
-                    response($.map(data, function(item) {
-                        return { 
-                            label: item.text, 
-                            value: item.text, 
-                            id: item.id,
-                            concentracion: item.concentracion // Solo lo usará productos
-                        };
-                    }));
+                // Alert (SweetAlert2 o tradicional)
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Selección inválida',
+                        text: 'Debes elegir una opción de la lista desplegable.',
+                        confirmButtonColor: '#6dacd6',
+                        background: '#1a1c20',
+                        color: '#e0e0e0'
+                    });
+                } else {
+                    alert("¡Atención! Debes seleccionar un elemento de la lista desplegable.");
                 }
-            });
-        },
-        select: function(event, ui) {
-            $(this).next('input[type="hidden"]').val(ui.item.id);
-        },
-        change: validarSeleccion
-    };
+            } else {
+                // Si es válido, restauramos el color del borde
+                $(this).css('border-color', '#2d3035');
+            }
+        }
 
-    // 3. INICIALIZAR TÉCNICOS (Diseño simple)
-    $(".buscar-tecnico").autocomplete(baseConfig);
-
-    // 4. INICIALIZAR PRODUCTOS (Con diseño especial de concentración)
-    $(".buscar-producto").each(function() {
-        $(this).autocomplete(baseConfig)
-        .autocomplete("instance")._renderItem = function(ul, item) {
-            return $("<li>")
-                .append(`<div class="d-flex justify-content-between align-items-center" style="width: 100%;">
-                    <span>${item.label}</span>
-                    <small style="color: #6dacd6; font-weight: bold;">
-                        <i class="fa-solid fa-percent me-1"></i>${item.concentracion ?? '0'}
-                    </small>
-                </div>`)
-                .appendTo(ul);
+        // 2. CONFIGURACIÓN BASE (AJAX y lógica común)
+        const baseConfig = {
+            minLength: 2,
+            source: function(request, response) {
+                $.ajax({
+                    url: $(this.element).data('url'),
+                    dataType: "json",
+                    data: { q: request.term },
+                    success: function(data) {
+                        response($.map(data, function(item) {
+                            return { 
+                                label: item.text, 
+                                value: item.text, 
+                                id: item.id,
+                                concentracion: item.concentracion // Solo lo usará productos
+                            };
+                        }));
+                    }
+                });
+            },
+            select: function(event, ui) {
+                $(this).next('input[type="hidden"]').val(ui.item.id);
+            },
+            change: validarSeleccion
         };
+
+        // 3. INICIALIZAR TÉCNICOS (Diseño simple)
+        $(".buscar-tecnico").autocomplete(baseConfig);
+
+        // 4. INICIALIZAR PRODUCTOS (Con diseño especial de concentración)
+        $(".buscar-producto").each(function() {
+            $(this).autocomplete(baseConfig)
+            .autocomplete("instance")._renderItem = function(ul, item) {
+                return $("<li>")
+                    .append(`<div class="d-flex justify-content-between align-items-center" style="width: 100%;">
+                        <span>${item.label}</span>
+                        <small style="color: #6dacd6; font-weight: bold;">
+                            <i class="fa-solid fa-percent me-1"></i>${item.concentracion ?? '0'}
+                        </small>
+                    </div>`)
+                    .appendTo(ul);
+            };
+        });
     });
-});
 
 </script>
 @endsection

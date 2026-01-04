@@ -5,9 +5,9 @@
 @endsection
 
 @section('titular')
-    <x-navbar :empresa="$empresa">
+    <x-navbar-3 :empresa="$empresa">
         Agregar mes
-    </x-navbar>
+    </x-navbar-3>
 @endsection
 
 @section('contenido')
@@ -45,18 +45,18 @@
 
 <script>
   $('#fecha_I').on('change', function() {
-    let inicio = new Date($(this).val() + "T00:00:00");
-    if (!isNaN(inicio.getTime())) {
-        let fin = new Date(inicio);
-        
-        // Sumamos un mes completo
-        fin.setMonth(fin.getMonth() + 1);
-        // Restamos un día para que NO se empalme con el inicio del próximo mes
-        fin.setDate(fin.getDate() - 1);
-        
-        let fechaFinStr = fin.toISOString().split('T')[0];
-        $('#fecha_f').val(fechaFinStr);
-    }
-});
+      let inicio = new Date($(this).val() + "T00:00:00");
+      if (!isNaN(inicio.getTime())) {
+          let fin = new Date(inicio);
+          
+          // Sumamos un mes completo
+          fin.setMonth(fin.getMonth() + 1);
+          // Restamos un día para que NO se empalme con el inicio del próximo mes
+          fin.setDate(fin.getDate() - 1);
+          
+          let fechaFinStr = fin.toISOString().split('T')[0];
+          $('#fecha_f').val(fechaFinStr);
+      }
+  });
 </script>
 @endSection

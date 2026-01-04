@@ -19,9 +19,7 @@ class serviciosController extends Controller
             $empresa = $mes->empresa;
             
             // Obtener servicios
-            $servicios = Servicio::where('id_mes', $id_mes)
-                ->orderBy('fecha', 'desc')
-                ->get();
+            $servicios = Servicio::where('id_mes', $id_mes)->orderBy('fecha', 'desc')->get();
             
             return view('servicios', compact('servicios', 'id_mes', 'mes', 'empresa'));
         }

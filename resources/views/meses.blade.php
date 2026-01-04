@@ -5,9 +5,9 @@
 @endsection
 
 @section('titular')
-<x-navbar :empresa="$empresa">
+<x-navbar-2 :empresa="$empresa">
     Meses
-</x-navbar>
+</x-navbar-2>
 @endsection
 
 @section('contenido')

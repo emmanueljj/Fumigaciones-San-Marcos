@@ -3,14 +3,14 @@
 @section('tittle', 'Agregar empresa')
 
 @section('titular')
-    <x-navbar>
+    <x-navbar-3>
         Agregar empresa
-    </x-navbar>
+    </x-navbar-3>
 @endsection
 
 @section('contenido')
 <style>
-    /* Estilos específicos para la foto */
+    /* Estilos existentes */
     .profile-upload-container {
         position: relative;
         width: 100px;
@@ -46,6 +46,12 @@
         transform: scale(1.1);
         background-color: #fff;
     }
+    /* Estilo para indicar que se puede pegar */
+    .paste-hint {
+        font-size: 0.75rem;
+        color: #6dacd6;
+        opacity: 0.8;
+    }
 </style>
 
 <div class="container py-4">
@@ -64,7 +70,8 @@
                         <i class="fa-solid fa-camera fa-xs"></i>
                     </button>
                 </div>
-                <p class="small mt-2">Logotipo de la empresa</p>
+                <p class="small mt-2 mb-0">Logotipo de la empresa</p>
+                <span class="paste-hint">(Puedes pegar una imagen con Ctrl+V)</span>
             </div>
 
             <div class="mb-3">
@@ -87,20 +94,47 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const btnEditFoto = document.getElementById('btnEditFoto');
-    const fotoInput = document.getElementById('fotoEmpresa');
-    const profileImage = document.getElementById('profileImg');
+    document.addEventListener('DOMContentLoaded', function () {
+        const btnEditFoto = document.getElementById('btnEditFoto');
+        const fotoInput = document.getElementById('fotoEmpresa');
+        const profileImage = document.getElementById('profileImg');
 
-    btnEditFoto.addEventListener('click', function() { fotoInput.click(); });
-
-    fotoInput.addEventListener('change', function(event) {
-        if (event.target.files && event.target.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) { profileImage.src = e.target.result; }
-            reader.readAsDataURL(event.target.files[0]);
+        // Función para actualizar la vista previa
+        function updatePreview(file) {
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) { profileImage.src = e.target.result; }
+                reader.readAsDataURL(file);
+            }
         }
+
+        // Click en el botón de cámara
+        btnEditFoto.addEventListener('click', function() { fotoInput.click(); });
+
+        // Cambio manual de archivo
+        fotoInput.addEventListener('change', function(event) {
+            updatePreview(event.target.files[0]);
+        });
+
+        // LÓGICA PARA PEGAR IMAGEN
+        document.addEventListener('paste', function (e) {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            
+            for (let index in items) {
+                const item = items[index];
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    const blob = item.getAsFile();
+                    
+                    // 1. Mostrar la vista previa
+                    updatePreview(blob);
+
+                    // 2. Sincronizar con el input file (necesario para que se envíe en el POST)
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(blob);
+                    fotoInput.files = dataTransfer.files;
+                }
+            }
+        });
     });
-});
 </script>
 @endsection

@@ -52,30 +52,30 @@ class empresasController extends Controller
 // =================================================================
     public function updateEmpresa(Request $request, $empresa_mod)
     {
-        // 2. Manejo de la Validación (optimizado)
-        try {
-            $request->validate([
-                'nombre' => 'required|string|max:255',
-                'encargado' => 'required|string|max:255'
-            ]);
-            
-        } catch (ValidationException $e) {
-            $mensaje = 'Debes completar todos los campos';
-            return redirect()->back()
-                ->withErrors($e->errors()) 
-                ->with('errorMensaje', $mensaje)
-                ->with('mostrarModal', true)
-                ->withInput();
-        }
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'encargado' => 'required|string|max:255',
+            'fotoEmpresa' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
 
         $empresa_new = empresas::findOrFail($empresa_mod);
 
-        $empresa_new ->update([
+        $datos = [
             'nombre' => $request->input('nombre'),
-            'encargado' => $request->input('encargado'), 
-        ]);
+            'encargado' => $request->input('encargado'),
+        ];
 
-        return redirect()->back()->with('success', 'Técnico modificado correctamente'); 
+        if ($request->hasFile('fotoEmpresa')) {
+            $foto = $request->file('fotoEmpresa');
+            $nombreLimpio = str_replace(' ', '_', $datos['nombre']);
+            $nombreArchivo = $nombreLimpio . '_' . time() . '.' . $foto->getClientOriginalExtension();
+            $foto->storeAs('fotos', $nombreArchivo, 'public');
+            $datos['foto'] = 'fotos/' . $nombreArchivo;
+        }
+
+        $empresa_new->update($datos);
+
+        return redirect()->back()->with('success', 'Empresa actualizada correctamente'); 
     }
 // =================================================================
     public function delEmpresa($id_empresa){

@@ -3,9 +3,9 @@
 @section('tittle', 'Editar Servicio')
 
 @section('titular')
-<x-navbar :id_mes="$id_mes" :empresa="$empresa">
+<x-navbar-3 :id_mes="$id_mes" :empresa="$empresa">
     Editar Servicio
-</x-navbar>
+</x-navbar-3>
 @endSection
 
 @section('contenido')

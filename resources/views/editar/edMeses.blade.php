@@ -5,9 +5,9 @@
 @endsection
 
 @section('titular')
-    <x-navbar>
+    <x-navbar-3>
         Editar mes
-    </x-navbar>
+    </x-navbar-3>
 @endsection
 
 @section('contenido')

@@ -3,9 +3,9 @@
 @section('tittle', 'Agregar Producto')
     
 @section('titular')
-<x-navbar>
+<x-navbar-3>
     Agregar productos
-</x-navbar>
+</x-navbar-3>
 @endSection
 
 @section('contenido')

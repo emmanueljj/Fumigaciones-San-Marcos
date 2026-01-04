@@ -3,20 +3,48 @@
 @section('tittle', 'Agregar Técnico')
 
 @section('titular')
-<x-navbar>
+<x-navbar-3>
     Agregar técnicos  
-</x-navbar>
+</x-navbar-3>
 @endSection
 
 @section('contenido')
 <style>
-    /* Asegúrate de tener los estilos de .form-card-minimal, .input-dark, etc. aquí o en tu CSS global */
-    .form-card-minimal { background-color: #1a1c20; border: 1px solid #2d3035; border-radius: 16px; }
-    .input-dark { background-color: #0f1012; border: 1px solid #2d3035; color: #e0e0e0; border-radius: 8px; padding: 0.6rem 1rem; }
-    .input-dark:focus { background-color: #141619; border-color: #4a4d55; color: #fff; outline: none; }
-    .form-label-dark { color: #a0a0a0; font-size: 0.85rem; margin-bottom: 0.4rem; }
-    .btn-save-minimal { background-color: #1c2a35; color: #6dacd6; border: 1px solid #243b4a; width: 100%; padding: 0.6rem; border-radius: 8px; transition: all 0.2s; }
-    .btn-save-minimal:hover { background-color: #243b4a; color: #fff; }
+    .form-card-minimal { 
+      background-color: #1a1c20; 
+      border: 1px solid #2d3035; 
+      border-radius: 16px; 
+    }
+    .input-dark { 
+      background-color: #0f1012; 
+      border: 1px solid #2d3035; 
+      color: #e0e0e0; border-radius: 
+      8px; padding: 0.6rem 1rem; 
+    }
+    .input-dark:focus { 
+      background-color: #141619; 
+      border-color: #4a4d55; 
+      color: #fff; 
+      outline: none; 
+    }
+    .form-label-dark {
+       color: #a0a0a0; 
+       font-size: 0.85rem; 
+       margin-bottom: 0.4rem;
+       }
+    .btn-save-minimal {
+       background-color: #1c2a35; 
+       color: #6dacd6; 
+       border: 1px solid #243b4a; 
+       width: 100%; 
+       padding: 0.6rem; 
+       border-radius: 8px; 
+       transition: all 0.2s;
+       }
+    .btn-save-minimal:hover {
+      background-color: #243b4a; 
+      color: #fff; 
+    }
 </style>
 
 <div class="container py-4">

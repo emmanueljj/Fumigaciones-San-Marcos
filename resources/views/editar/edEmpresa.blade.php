@@ -3,9 +3,9 @@
 @section('tittle', 'Editar empresa')
 
 @section('titular')
-    <x-navbar>
+    <x-navbar-3>
         Editar empresa
-    </x-navbar>
+    </x-navbar-3>
 @endsection
 
 @section('contenido')
@@ -88,20 +88,47 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const btnEditFoto = document.getElementById('btnEditFoto');
-    const fotoInput = document.getElementById('fotoEmpresa');
-    const profileImage = document.getElementById('profileImg');
+    document.addEventListener('DOMContentLoaded', function () {
+        const btnEditFoto = document.getElementById('btnEditFoto');
+        const fotoInput = document.getElementById('fotoEmpresa');
+        const profileImage = document.getElementById('profileImg');
 
-    btnEditFoto.addEventListener('click', function() { fotoInput.click(); });
-
-    fotoInput.addEventListener('change', function(event) {
-        if (event.target.files && event.target.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) { profileImage.src = e.target.result; }
-            reader.readAsDataURL(event.target.files[0]);
+        // Función para actualizar la vista previa
+        function updatePreview(file) {
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) { profileImage.src = e.target.result; }
+                reader.readAsDataURL(file);
+            }
         }
+
+        // Click en el botón de cámara
+        btnEditFoto.addEventListener('click', function() { fotoInput.click(); });
+
+        // Cambio manual de archivo
+        fotoInput.addEventListener('change', function(event) {
+            updatePreview(event.target.files[0]);
+        });
+
+        // LÓGICA PARA PEGAR IMAGEN
+        document.addEventListener('paste', function (e) {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            
+            for (let index in items) {
+                const item = items[index];
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    const blob = item.getAsFile();
+                    
+                    // 1. Mostrar la vista previa
+                    updatePreview(blob);
+
+                    // 2. Sincronizar con el input file (necesario para que se envíe en el POST)
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(blob);
+                    fotoInput.files = dataTransfer.files;
+                }
+            }
+        });
     });
-});
 </script>
 @endsection
