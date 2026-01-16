@@ -156,16 +156,35 @@
 </div>
 
 <script>
+     // JS Original de fechas
+    document.addEventListener('DOMContentLoaded', function() {
+        const fechaInput = document.getElementById('fecha');
+        if(fechaInput){
+            const min = fechaInput.getAttribute('min');
+            const max = fechaInput.getAttribute('max');
+            fechaInput.addEventListener('change', function() {
+                const fecha = this.value;
+                if (fecha < min || fecha > max) {
+                    alert('La fecha debe estar dentro del periodo: ' + min + ' a ' + max);
+                    this.value = min;
+                }
+            });
+        }
+    });
+
+   // 1. Tu función de previsualización original (ahora compatible con pegado)
     function previewFirma(event) {
         const file = event.target.files[0];
         const preview = document.getElementById('firmaPreview');
         
         if (file) {
+            // Validación de tamaño (2MB)
             if (file.size > 2 * 1024 * 1024) {
                 alert('La imagen es muy grande. Máximo 2MB permitido.');
                 event.target.value = '';
                 return;
             }
+            // Validación de tipo
             if (!file.type.startsWith('image/')) {
                 alert('Por favor selecciona una imagen válida.');
                 event.target.value = '';
@@ -174,36 +193,47 @@
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                // Reemplazamos todo el contenido (icono o imagen anterior) por la nueva preview
-                preview.innerHTML = `<img src="${e.target.result}" alt="Preview" style="max-height: 120px;">
-                                     <p class="text-info opacity-75 mt-2 small">Nueva firma seleccionada</p>`;
+                // Actualizamos el contenedor con la imagen
+                preview.innerHTML = `<img src="${e.target.result}" alt="Preview" style="max-height: 120px; border-radius: 8px;">`;
             };
             reader.readAsDataURL(file);
+        } else {
+            // Reset al estado original si no hay archivo
+            preview.innerHTML = `
+                <i class="fa-solid fa-signature text-secondary opacity-50" style="font-size: 2.5rem;"></i>
+                <p class="text-secondary opacity-50 mt-2 small">Vista previa de firma</p>
+            `;
         }
-        // Nota: Si cancela la selección de archivo, no revertimos a la imagen original por simplicidad de JS,
-        // pero el input file quedaría vacío y el backend mantendría la vieja.
     }
 
-    // JS Original de fechas
-    document.addEventListener('DOMContentLoaded', function() {
-        const fechaInput = document.getElementById('fecha');
-        if(fechaInput){
-            const min = fechaInput.getAttribute('min');
-            const max = fechaInput.getAttribute('max');
+    // 2. Evento para PEGAR imagen
+    window.addEventListener('paste', function(e) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        
+        for (let index in items) {
+            const item = items[index];
             
-            // Validación inicial por si el dato de la BD está fuera de rango (raro pero posible)
-            if (fechaInput.value && (fechaInput.value < min || fechaInput.value > max)) {
-                // Opcional: Avisar al usuario o dejarlo pasar para que lo corrija
-                console.warn('La fecha cargada está fuera del rango del mes.');
+            if (item.kind === 'file' && item.type.indexOf('image') !== -1) {
+                const blob = item.getAsFile();
+                
+                // Creamos el archivo y lo inyectamos al input
+                const dataTransfer = new DataTransfer();
+                const file = new File([blob], "firma_pegada.png", { type: blob.type });
+                dataTransfer.items.add(file);
+                
+                const inputFirma = document.getElementById('vb_firma'); // Tu ID de input
+                inputFirma.files = dataTransfer.files;
+                
+                // CLAVE: Llamamos a la función CORRECTA: previewFirma
+                const fakeEvent = { 
+                    target: { 
+                        files: [file] 
+                    } 
+                };
+                previewFirma(fakeEvent); 
+                
+                console.log('Imagen de firma pegada y previsualizada');
             }
-
-            fechaInput.addEventListener('change', function() {
-                const fecha = this.value;
-                if (fecha < min || fecha > max) {
-                    alert('La fecha debe estar dentro del periodo: ' + min + ' a ' + max);
-                    this.value = min;
-                }
-            });
         }
     });
 </script>
