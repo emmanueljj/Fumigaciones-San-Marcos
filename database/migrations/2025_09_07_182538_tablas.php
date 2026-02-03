@@ -6,21 +6,38 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-         // Tabla: empresas
+        // 1. TABLAS BASE
         Schema::create('empresas', function (Blueprint $table) {
             $table->id('id_empresa');
             $table->string('nombre');
             $table->string('encargado');
-            $table->string('foto')->nullable(); // ← nueva columna
+            $table->string('correo')->unique();
+            $table->string('ubicacion')->nullable();
+            $table->string('foto')->nullable();
+            $table->string('calendario')->nullable();
+            $table->string('esquemas')->nullable();
+            $table->string('especificaciones')->nullable();
             $table->timestamps();
         });
 
-        // Tabla: meses
+        Schema::create('productos', function (Blueprint $table) {
+            $table->id('id_pr');
+            $table->string('nombre');
+            $table->string('concentracion');
+            $table->string('fichaTecnica');
+            $table->timestamps();
+        });
+
+        Schema::create('tecnicos', function (Blueprint $table) {
+            $table->id('id_tec');
+            $table->string('nombre');
+            $table->string('clave');
+            $table->timestamps();
+        });
+
+        // 2. NIVEL 1
         Schema::create('meses', function (Blueprint $table) {
             $table->id('id_mes');
             $table->date('fecha_I');
@@ -30,80 +47,64 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Tabla: servicios
+        // 3. NIVEL 2: SERVICIOS (LIMPIA)
         Schema::create('servicios', function (Blueprint $table) {
             $table->id('id_servicio');
             $table->date('fecha');
-            $table->string('vb_nombre');
-            $table->string('vb_firma');
             $table->unsignedBigInteger('id_mes');
             $table->foreign('id_mes')->references('id_mes')->on('meses')->onDelete('cascade');
+            $table->text('observacion')->nullable();
+            $table->text('controlPerimetral')->nullable();
             $table->timestamps();
         });
 
-        // Tabla: productos
-        Schema::create('productos', function (Blueprint $table) {
-            $table->id('id_pr')->autoIncrement();
-            $table->string('nombre');
-            $table->string('concentracion');
-            $table->string('metodo');
-            $table->string('plaga');
-            $table->timestamps();
-        });
-
-        // Tabla: tecnicos
-        Schema::create('tecnicos', function (Blueprint $table) {
-            $table->id('id_tec');
-            $table->string('nombre');
-            $table->string('clave');
-            $table->timestamps();
-        });
-
-        // Tabla: actividades
+        // 4. NIVEL 3: ACTIVIDADES
         Schema::create('actividades', function (Blueprint $table) {
             $table->id();
             $table->string('nombre');
             $table->time('hora');
             $table->string('area');
-            $table->text('observacion')->nullable();
+            $table->string('vbNombre');
+            $table->string('vbFirma');
             $table->string('foto')->nullable();
-
-            //clave foranea de servicio
             $table->unsignedBigInteger('id_servicio')->nullable();
             $table->foreign('id_servicio')->references('id_servicio')->on('servicios')->onDelete('set null');
+            $table->timestamps();
+        });
 
-            // Claves foráneas a productos
-            $table->unsignedBigInteger('pr1')->nullable();
-            $table->unsignedBigInteger('pr2')->nullable();
-            $table->unsignedBigInteger('pr3')->nullable();
-            $table->unsignedBigInteger('pr4')->nullable();
-            $table->foreign('pr1')->references('id_pr')->on('productos')->onDelete('set null');
-            $table->foreign('pr2')->references('id_pr')->on('productos')->onDelete('set null');
-            $table->foreign('pr3')->references('id_pr')->on('productos')->onDelete('set null');
-            $table->foreign('pr4')->references('id_pr')->on('productos')->onDelete('set null');
+        // 5. TABLAS PIVOT (MUCHOS A MUCHOS)
+        
+        // Relación Servicios <-> Productos
+        Schema::create('producto_servicio', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('servicio_id');
+            $table->unsignedBigInteger('producto_id');
+            $table->foreign('servicio_id')->references('id_servicio')->on('servicios')->onDelete('cascade');
+            $table->foreign('producto_id')->references('id_pr')->on('productos')->onDelete('cascade');
+            $table->timestamps();
+        });
 
-            // Claves foráneas a técnicos
-            $table->unsignedBigInteger('tecnico1')->nullable();
-            $table->unsignedBigInteger('tecnico2')->nullable();
-            $table->unsignedBigInteger('tecnico3')->nullable();
-            $table->foreign('tecnico1')->references('id_tec')->on('tecnicos')->onDelete('set null');
-            $table->foreign('tecnico2')->references('id_tec')->on('tecnicos')->onDelete('set null');
-            $table->foreign('tecnico3')->references('id_tec')->on('tecnicos')->onDelete('set null');
-
+        // Relación Servicios <-> Técnicos (NUEVA)
+        Schema::create('servicio_tecnico', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('servicio_id');
+            $table->unsignedBigInteger('tecnico_id');
+            $table->foreign('servicio_id')->references('id_servicio')->on('servicios')->onDelete('cascade');
+            $table->foreign('tecnico_id')->references('id_tec')->on('tecnicos')->onDelete('cascade');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
+        // El orden inverso es vital
+        Schema::dropIfExists('servicio_tecnico');
+        Schema::dropIfExists('producto_servicio');
         Schema::dropIfExists('actividades');
-        Schema::dropIfExists('tecnicos');
-        Schema::dropIfExists('productos');
         Schema::dropIfExists('servicios');
         Schema::dropIfExists('meses');
+        Schema::dropIfExists('tecnicos');
+        Schema::dropIfExists('productos');
         Schema::dropIfExists('empresas');
     }
 };

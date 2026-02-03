@@ -102,12 +102,18 @@ class tecnicosController extends Controller
     }
 
     public function buscar(Request $request) {
-        $q = $request->get('q');
-        return tecnicos::select('id_tec as id', 'nombre as text')
-            ->where('nombre', 'LIKE', "%$q%")
-            ->limit(10)
-            ->get();
-        }
+        $term = $request->q;
+        $tecnicos = tecnicos::where('nombre', 'LIKE', "%$term%")->get();
+
+        return response()->json($tecnicos->map(function($p) {
+            return [
+                'id'    => $p->id_tec,     // ID real para la base de datos
+                'label' => $p->nombre,  // Lo que el usuario ve en la lista
+                'value' => $p->nombre,  // Lo que se escribe en el input al seleccionar
+                'text'  => $p->nombre   // Mantener por compatibilidad con tu JS actual
+            ];
+        }));
+    }
 
 }
 

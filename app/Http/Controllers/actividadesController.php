@@ -9,8 +9,9 @@ use App\Models\Actividades;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Exception;
 
-class actividadesController extends Controller
+class ActividadesController extends Controller
 {
     // --- MÉTODOS DE VISTA ---
 
@@ -28,7 +29,7 @@ class actividadesController extends Controller
     public function ag_actividades($id_servicio, Request $request) {
         $id_mes = $request->query('id_mes');
         $id_empresa = $request->query('id_empresa');
-        $empresa = Empresas::find($id_empresa);
+        $empresa = Empresas::findOrFail($id_empresa);
 
         return view('agregar.agActividades', compact('id_servicio', 'id_mes', 'empresa'));
     }
@@ -40,16 +41,11 @@ class actividadesController extends Controller
     }
 
 
-    // --- MÉTODOS DE ACCIÓN (LÓGICA REFORMULADA) ---
+    // --- MÉTODOS DE ACCIÓN ---
 
     public function addActividad(Request $request) {
         try {
-            $datos = $this->validarFormulario($request);
-            
-            if ($request->hasFile('foto')) {
-                $datos['foto'] = $this->procesarFoto($request);
-            }
-
+            $datos = $this->validarYProcesar($request);
             Actividades::create($datos);
 
             return redirect('/actividades/' . $request->id_servicio)
@@ -57,19 +53,15 @@ class actividadesController extends Controller
 
         } catch (ValidationException $e) {
             return $this->errorValidacion($e);
+        } catch (Exception $e) {
+            return redirect()->back()->withInput()->with('errorMensaje', $e->getMessage())->with('mostrarModal', true);
         }
     }
 
     public function updateAct(Request $request, $id) {
         try {
             $actividad = Actividades::findOrFail($id);
-            $datos = $this->validarFormulario($request);
-
-            if ($request->hasFile('foto')) {
-                // Eliminar foto anterior si existe
-                if ($actividad->foto) { Storage::disk('public')->delete($actividad->foto); }
-                $datos['foto'] = $this->procesarFoto($request);
-            }
+            $datos = $this->validarYProcesar($request, $actividad);
 
             $actividad->update($datos);
 
@@ -78,58 +70,73 @@ class actividadesController extends Controller
 
         } catch (ValidationException $e) {
             return $this->errorValidacion($e);
+        } catch (Exception $e) {
+            return redirect()->back()->withInput()->with('errorMensaje', $e->getMessage())->with('mostrarModal', true);
         }
     }
 
     public function destroy($id) {
-        $actividad = Actividades::findOrFail($id);
-        if ($actividad->foto) {
-            Storage::disk('public')->delete($actividad->foto);
+        try {
+            $actividad = Actividades::findOrFail($id);
+            if ($actividad->foto) {
+                Storage::disk('public')->delete($actividad->foto);
+            }
+            $actividad->delete();
+            
+            return back()->with('success', 'Actividad eliminada correctamente');
+        } catch (Exception $e) {
+            return back()->with('error', 'No se pudo eliminar la actividad.');
         }
-        $actividad->delete();
-        
-        return back()->with('success', 'Actividad eliminada correctamente');
     }
 
 
-    // --- MÉTODOS PRIVADOS / AUXILIARES (POR FUERA) ---
+    // --- MÉTODOS PRIVADOS AUXILIARES ---
 
-    /**
-     * Define y ejecuta las reglas de validación.
-     */
-    private function validarFormulario(Request $request) {
-        return $request->validate([
+    private function validarYProcesar(Request $request, $actividad = null) {
+        $reglas = [
             'id_servicio' => 'required|exists:servicios,id_servicio',
-            'nombre'      => 'required|string|max:40',
+            'nombre'      => 'required|string|max:255',
             'hora'        => 'required',
-            'area'        => 'nullable|string|max:20',
-            'observacion' => 'nullable|string',
-            'foto'        => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'pr1'         => 'required|integer|exists:productos,id_pr',
-            'pr2'         => 'nullable|integer|exists:productos,id_pr',
-            'pr3'         => 'nullable|integer|exists:productos,id_pr',
-            'pr4'         => 'nullable|integer|exists:productos,id_pr',
-            'tecnico1'    => 'required|integer|exists:tecnicos,id_tec',
-            'tecnico2'    => 'nullable|integer|exists:tecnicos,id_tec',
-            'tecnico3'    => 'nullable|integer|exists:tecnicos,id_tec',
-        ]);
+            'area'        => 'required|string|max:255',
+            'vbNombre'    => 'required|string|max:255',
+            'vbFirma'     => 'nullable|image|mimes:jpeg,png,jpg|max:4096',
+            'foto'        => 'nullable|image|mimes:jpeg,png,jpg|max:4096',
+        ];
+
+        $request->validate($reglas);
+        
+        // 1. Extraemos solo los campos de texto primero
+        $datos = $request->only(['id_servicio', 'nombre', 'hora', 'area', 'vbNombre']);
+
+        // 2. Procesar Foto de Evidencia
+        if ($request->hasFile('foto')) {
+            if ($actividad && $actividad->foto) {
+                Storage::disk('public')->delete($actividad->foto);
+            }
+            // CLAVE: Usar store() asigna la ruta limpia a la variable
+            $datos['foto'] = $request->file('foto')->store('evidencias_actividades', 'public');
+        }
+
+        // 3. Procesar Firma (Visto Bueno)
+        if ($request->hasFile('vbFirma')) {
+            if ($actividad && $actividad->vbFirma) {
+                Storage::disk('public')->delete($actividad->vbFirma);
+            }
+            // CLAVE: Esto es lo que evita que se guarde la ruta de C:\xampp\tmp
+            $datos['vbFirma'] = $request->file('vbFirma')->store('firmas_actividades', 'public');
+        }
+
+        return $datos;
     }
 
     /**
-     * Maneja la subida de archivos.
-     */
-    private function procesarFoto(Request $request) {
-        return $request->file('foto')->store('actividades', 'public');
-    }
-
-    /**
-     * Centraliza la respuesta en caso de error de validación para mostrar el modal.
+     * Centraliza la respuesta en caso de error de validación para el modal.
      */
     private function errorValidacion(ValidationException $e) {
         return redirect()->back()
             ->withErrors($e->errors())
             ->withInput()
-            ->with('errorMensaje', 'Verifica los campos del formulario.')
+            ->with('errorMensaje', 'Verifica que todos los campos requeridos estén llenos.')
             ->with('mostrarModal', true);
     }
 }

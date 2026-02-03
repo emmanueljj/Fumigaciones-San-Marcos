@@ -3,133 +3,144 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\productos;
+use App\Models\Productos;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Exception;
 
-
-class productosController extends Controller
+class ProductosController extends Controller
 {
     public function productos() {
-            $productos = productos::orderBy('updated_at','desc')->paginate(10);
-            return view('productos', compact('productos'));
+        $productos = Productos::orderBy('updated_at', 'desc')->paginate(10);
+        return view('productos', compact('productos'));
     }
-    
+
     public function ag_productos() {
-            return view('agregar.agProductos');
-    }
-    
-    public function addProductos(Request $request){
-        
-        try {
-            $request->validate([
-                'nombre' => 'required|string|max:255',
-                'concentracion' => 'required|string|max:255',
-                'metodo' => 'required|string|max:255',
-                'plaga' => 'required|string|max:255',
-            ]);
-            
-        } catch (ValidationException $e) {
-        // Definimos el mensaje claro y legible
-        $mensaje = 'Debes completar todos los campos';
-
-        return redirect()->back()
-            ->with('errorMensaje', $mensaje) // Manda el mensaje personalizado
-            ->with('mostrarModal', true)      // Manda la bandera para el modal
-            ->withInput();
+        return view('agregar.agProductos');
     }
 
-        $otroRegistroMismoId = productos::where([
-            'nombre'=> $request->nombre,
-            'concentracion'=> $request->concentracion,
-            'metodo'=> $request->metodo,
-            'plaga'=> $request->plaga,
-        ])->first();
-
-        if ($otroRegistroMismoId) {
-            return redirect()->back()
-                ->with('errorMensaje','ya tienes un producto totalmente identico')
-                ->with('mostrarModal', true)
-                ->withInput();
-        }
- 
-        productos::create([
-        'nombre' => $request->nombre,
-        'concentracion' => $request->concentracion,
-        'metodo' => $request->metodo,
-        'plaga' => $request->plaga
-        ]);
-
-        return redirect()->back()->with('success', 'Técnico registrado correctamente');
-    }
-  // =================================================================
-    public function edProducto($id_prod){
-        
-        $prod_mod = productos::findOrFail($id_prod);
-        if (!$prod_mod) {
-            return redirect()->back()->with('error', 'Técnico no encontrado');
-        }
-        return view('editar.edProductos', compact('prod_mod'));
-    }
-  // =================================================================
-    public function updateProducto(Request $request, $prod_mod)
+    /**
+     * Método centralizado para validar datos, procesar archivos y evitar duplicados
+     */
+    private function validarYProcesar(Request $request, $id_prod = null)
     {
-        // 2. Manejo de la Validación (optimizado)
         try {
+            // 1. Validación de campos según la nueva migración
             $request->validate([
-                'nombre' => 'required|string|max:255',
+                'nombre'        => 'required|string|max:255',
                 'concentracion' => 'required|string|max:255',
-                'metodo' => 'required|string|max:255',
-                'plaga' => 'required|string|max:255',
+                'fichaTecnica'  => 'nullable|mimes:pdf,jpg,jpeg,png|max:4096', // No se aceptan .doc
             ]);
-            
         } catch (ValidationException $e) {
-            $mensaje = 'Debes completar todos los campos (nombre,concentracion,metodo,etc.).';
-            return redirect()->back()
-                ->withErrors($e->errors()) 
-                ->with('errorMensaje', $mensaje)
-                ->with('mostrarModal', true)
-                ->withInput();
+            // Manejo de error personalizado para disparar tu modal
+            throw ValidationException::withMessages([
+                'errorMensaje' => 'Debes completar los campos requeridos y usar formatos válidos (PDF/Imagen).',
+                'mostrarModal' => true
+            ]);
         }
 
-        $prod_new = productos::findOrFail($prod_mod);
+        // 2. Verificar duplicados (excluyendo el registro actual si es edición)
+        $queryDuplicado = Productos::where('nombre', $request->nombre)
+                                   ->where('concentracion', $request->concentracion);
+        
+        if ($id_prod) {
+            $queryDuplicado->where('id_pr', '!=', $id_prod);
+        }
 
-        $prod_new->update([
-            'nombre' => $request->input('nombre'),
-            'clave' => $request->input('clave'), 
-            'concentracion' => $request->input('concentracion'),
-            'metodo' => $request->input('metodo'),
-            'plaga' => $request->input('plaga')
-        ]);
+        if ($queryDuplicado->exists()) {
+            throw new Exception('Ya existe un producto con el mismo nombre y concentración.');
+        }
 
-        return redirect()->back()->with('success', 'Técnico modificado correctamente'); 
-    }
-   // =================================================================
-    public function delProductos($id_prod){
-                try {
-                    $registro = productos::findOrFail($id_prod);
-                    $registro->delete();
-                    
-                    return redirect()->back()
-                        ->with('success', 'Registro eliminado correctamente');
-                } catch (\Exception $e) {
-                    return redirect()->back()
-                        ->with('error', 'Error al eliminar el registro');
+        // 3. Preparar datos
+        $datos = $request->only(['nombre', 'concentracion']);
+
+        // 4. Procesar Ficha Técnica
+        if ($request->hasFile('fichaTecnica')) {
+            // Si es edición, borrar la ficha anterior
+            if ($id_prod) {
+                $prodActual = Productos::find($id_prod);
+                if ($prodActual && $prodActual->fichaTecnica) {
+                    Storage::disk('public')->delete($prodActual->fichaTecnica);
                 }
             }
+            $datos['fichaTecnica'] = $request->file('fichaTecnica')->store('fichas_tecnicas', 'public');
+        }
 
-    // Ejemplo de cómo debería verse la respuesta en tu Controlador
+        return $datos;
+    }
+
+    public function addProductos(Request $request)
+    {
+        try {
+            $datos = $this->validarYProcesar($request);
+            Productos::create($datos);
+
+            return redirect()->back()->with('success', 'Producto registrado correctamente');
+
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput()
+                ->with('errorMensaje', $e->getMessage())
+                ->with('mostrarModal', true);
+        } catch (Exception $e) {
+            return redirect()->back()->withInput()
+                ->with('errorMensaje', $e->getMessage())
+                ->with('mostrarModal', true);
+        }
+    }
+
+    public function edProducto($id_prod) {
+        $prod_mod = Productos::findOrFail($id_prod);
+        return view('editar.edProductos', compact('prod_mod'));
+    }
+
+    public function updateProducto(Request $request, $id_prod)
+    {
+        try {
+            $producto = Productos::findOrFail($id_prod);
+            $datos = $this->validarYProcesar($request, $id_prod);
+
+            $producto->update($datos);
+
+            return redirect('/productos')->with('success', 'Producto modificado correctamente');
+
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput()
+                ->with('errorMensaje', $e->getMessage())
+                ->with('mostrarModal', true);
+        } catch (Exception $e) {
+            return redirect()->back()->withInput()
+                ->with('errorMensaje', $e->getMessage())
+                ->with('mostrarModal', true);
+        }
+    }
+
+    public function delProductos($id_prod) {
+        try {
+            $registro = Productos::findOrFail($id_prod);
+            
+            // Borrar archivo físico
+            if ($registro->fichaTecnica) {
+                Storage::disk('public')->delete($registro->fichaTecnica);
+            }
+
+            $registro->delete();
+            return redirect()->back()->with('success', 'Producto eliminado correctamente');
+        } catch (Exception $e) {
+            return redirect()->back()->with('error', 'Error al eliminar el registro');
+        }
+    }
+
     public function buscar(Request $request) {
         $term = $request->q;
-        $productos = productos::where('nombre', 'LIKE', "%$term%")
-            ->get(['id_pr', 'nombre', 'concentracion']);
+        $productos = Productos::where('nombre', 'LIKE', "%$term%")->get();
 
         return response()->json($productos->map(function($p) {
-            return [
-                'id' => $p->id_pr,
-                'text' => $p->nombre,
-                'concentracion' => $p->concentracion // <-- ESTO ES VITAL
-            ];
+        return [
+                    'id'    => $p->id_pr,     // ID real para la base de datos
+                    'label' => $p->nombre,  // Lo que el usuario ve en la lista
+                    'value' => $p->nombre,  // Lo que se escribe en el input al seleccionar
+                    'text'  => $p->id_pr   // Mantener por compatibilidad con tu JS actual
+                ];
         }));
     }
-    
 }

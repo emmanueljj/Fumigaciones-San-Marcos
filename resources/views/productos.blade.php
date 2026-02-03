@@ -1,17 +1,16 @@
 @extends('layouts.plantilla')
 
-@section('tittle', 'Productos')
+@section('tittle', 'productos')
 
 @section('titular')
     <x-navbar>
         Productos
     </x-navbar>
-@endSection
+@endsection
 
 @section('contenido')
 
 <style>
-    /* Contenedor centralizado */
     .products-container {
         max-width: 1000px;
         margin: 0 auto;
@@ -20,205 +19,116 @@
         gap: 0.8rem;
     }
 
-    /* La Tarjeta de Producto */
     .product-card {
-        background-color: #1a1c20; /* Off-Black */
+        background-color: #1a1c20;
         border: 1px solid #2d3035;
         border-radius: 12px;
-        padding: 1rem 1.25rem;
+        padding: 0.8rem 1.25rem;
         display: flex;
         align-items: center;
-        justify-content: space-between;
         transition: all 0.2s ease;
-        flex-wrap: wrap; /* Clave para responsividad */
-        gap: 1rem;
     }
 
     .product-card:hover {
         background-color: #202329;
-        border-color: #3f444d;
+        border-color: #6dacd6;
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
-    /* Sección Izquierda: Icono + Nombre + Plaga */
-    .product-info {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        flex: 1; /* Ocupa el espacio disponible */
-        min-width: 250px;
-    }
+    /* Columnas Equilibradas */
+    .col-info { flex: 1.5; display: flex; align-items: center; gap: 1rem; }
+    .col-concentration { flex: 1; text-align: center; display: flex; justify-content: center; }
+    .col-actions { flex: 0.5; display: flex; justify-content: flex-end; gap: 0.5rem; }
 
-    /* Icono Decorativo (Matraz/Químico) */
     .product-icon-box {
-        width: 42px;
-        height: 42px;
+        width: 42px; height: 42px;
         background-color: #1c222b;
         border: 1px solid #2d3035;
         border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #6dacd6; /* Azul suave */
-        flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        color: #6dacd6;
     }
 
-    /* Textos Principales */
-    .product-name {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #e0e0e0;
-        margin: 0;
-        line-height: 1.2;
-    }
+    .product-name { font-size: 1rem; font-weight: 600; color: #e0e0e0; margin: 0; }
 
-    .product-target {
-        font-size: 0.85rem;
-        color: #d66d6d; /* Rojo suave para indicar "Plaga/Enemigo" */
-        margin: 2px 0 0 0;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    /* Sección Central: Especificaciones Técnicas (Chips) */
-    .product-specs {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-
-    /* Diseño de los Chips (Etiquetas) */
+    /* Estilo para Concentración y Ficha */
     .spec-chip {
         font-size: 0.75rem;
-        padding: 4px 10px;
+        padding: 5px 12px;
         border-radius: 20px;
-        font-weight: 500;
-        border: 1px solid;
-    }
-
-    .chip-method {
-        background-color: rgba(23, 162, 184, 0.1);
-        color: #17a2b8;
-        border-color: rgba(23, 162, 184, 0.2);
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        transition: 0.2s;
     }
 
     .chip-concentration {
-        background-color: rgba(108, 117, 125, 0.1);
-        color: #aab0b6;
-        border-color: rgba(108, 117, 125, 0.2);
+        background-color: rgba(109, 172, 214, 0.1);
+        color: #6dacd6;
+        border: 1px solid rgba(109, 172, 214, 0.2);
     }
 
-    /* Sección Derecha: Acciones */
-    .product-actions {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-    }
-
-    /* Botones sutiles (Reutilizados del diseño anterior para consistencia) */
-    .btn-icon-soft {
-        width: 34px;
-        height: 34px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid transparent;
-        background-color: transparent;
-        color: #5c6068;
-        transition: all 0.2s;
-    }
-
-    .btn-icon-soft:hover {
-        background-color: #2d3035;
-        color: #e0e0e0;
-    }
-    
-    .btn-icon-soft.delete:hover {
-        background-color: #2c1a1a;
+    .chip-file {
+        background-color: rgba(214, 109, 109, 0.1);
         color: #d66d6d;
+        border: 1px solid rgba(214, 109, 109, 0.2);
+        margin-left: 10px;
     }
+    .chip-file:hover { background-color: rgba(214, 109, 109, 0.2); color: #fff; }
 
-    /* Responsividad Móvil */
-    @media (max-width: 768px) {
-        .product-card {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.75rem;
-        }
-        .product-info { width: 100%; }
-        .product-specs { width: 100%; margin-left: 3.5rem; /* Alinear con texto, saltando icono */ }
-        .product-actions { 
-            width: 100%; 
-            justify-content: flex-end; 
-            border-top: 1px solid #2d3035;
-            padding-top: 0.5rem;
-        }
+    .btn-icon-soft {
+        width: 34px; height: 34px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        color: #5c6068; transition: 0.2s; background: none; border: none;
     }
-       /* Ajuste para que los botones de paginación sean oscuros */
+    .btn-icon-soft:hover { background-color: #2d3035; color: #fff; }
+    .btn-icon-soft.delete:hover { background-color: #2c1a1a; color: #d66d6d; }
+
+    /* Paginación Dark */
     .pagination .page-item .page-link {
-        background-color: rgba(26, 28, 32, 0.6) !important;
-        backdrop-filter: blur(8px);
-        border: 1px solid #2d3035 !important;
-        color: #e0e0e0 !important;
-
+        background-color: #1a1c20; border: 1px solid #2d3035; color: #e0e0e0;
     }
-
     .pagination .page-item.active .page-link {
-        background-color: #6dacd6 !important; /* Azul San Marcos */
-        border-color: #6dacd6 !important;
-        color: #1a1c20 !important;
-    }
-
-    .pagination .page-item.disabled .page-link {
-        background-color: #0f1012 !important;
-        color: #5c6068 !important;
-    }
-
-    .contenedor_paginacion{
-        position: relative;
-        display: flex;
-        justify-content: space-around;
+        background-color: #6dacd6; border-color: #6dacd6; color: #1a1c20;
     }
 </style>
 
 <div class="container pb-5">
     <div class="products-container">
         
-        <div class="d-none d-md-flex px-3 small text-uppercase fw-bold" style="letter-spacing: 1px;">
-            <div style="flex: 1;">Producto y Plaga</div>
-            <div style="width: 250px;">Especificaciones</div>
-            <div style="width: 80px; text-align: right;">Acciones</div>
+        <div class="d-none d-md-flex px-3 small text-uppercase fw-bold mb-2" style="letter-spacing: 1px;">
+            <div style="flex: 1.5;">Producto</div>
+            <div style="flex: 1; text-align: center;">Concentración y Documentos</div>
+            <div style="flex: 0.5; text-align: right;">Acciones</div>
         </div>
 
         @forelse ($productos as $producto)
         <div class="product-card">
             
-            <div class="product-info">
+            <div class="col-info">
                 <div class="product-icon-box">
-                    <i class="fa-solid fa-flask"></i>
+                    <i class="fa-solid fa-flask-vial"></i>
                 </div>
                 <div>
                     <h4 class="product-name">{{ $producto->nombre }}</h4>
-                    <p class="product-target">
-                        <i class="fa-solid fa-bug fa-xs"></i> {{ $producto->plaga }}
-                    </p>
                 </div>
             </div>
 
-            <div class="product-specs">
-                <span class="spec-chip chip-method" title="Método de aplicación">
-                    <i class="fa-solid fa-spray-can me-1"></i> {{ $producto->metodo }}
-                </span>
-                <span class="spec-chip chip-concentration" title="Concentración">
+            <div class="col-concentration">
+                <span class="spec-chip chip-concentration" title="Concentración del producto">
                     <i class="fa-solid fa-percent me-1"></i> {{ $producto->concentracion }}
                 </span>
+
+                @if($producto->fichaTecnica)
+                    <a href="{{ asset('storage/' . $producto->fichaTecnica) }}" target="_blank" class="spec-chip chip-file" title="Ver Ficha Técnica">
+                        <i class="fa-solid fa-file-pdf"></i> Ficha
+                    </a>
+                @endif
             </div>
 
-            <div class="product-actions">
+            <div class="col-actions">
                 <a href="/edProducto/{{$producto->id_pr}}" class="btn-icon-soft" title="Editar">
                     <i class="fa-solid fa-pencil"></i>
                 </a>
@@ -236,18 +146,17 @@
 
         </div>
         @empty
-            <div class="text-center py-5 text-muted">
-                <i class="fa-solid fa-flask-vial fa-3x mb-3 opacity-25"></i>
-                <p>No hay productos registrados.</p>
+            <div class="text-center py-5 card-dark" style="border-radius: 16px;">
+                <i class="fa-solid fa-flask-vial fa-3x mb-3 "></i>
+                <p>No hay productos registrados en el sistema.</p>
             </div>
         @endforelse
 
     </div>
 
-    <div class="d-flex justify-content-center mt-4 contenedor_paginacion">
-    {{ $productos->links() }}
+    <div class="d-flex justify-content-center mt-4">
+        {{ $productos->links() }}
     </div>
-
 </div>
 
 @endsection

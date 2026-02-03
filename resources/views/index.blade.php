@@ -154,7 +154,7 @@
 </style>
 
 <div class="container pb-5">
-    <div class="list-container">
+    <div class="list-container" >
         
         @forelse ($empresas as $empresa)
             <div class="company-row">
@@ -200,8 +200,8 @@
 
             </div>
         @empty
-            <div class="text-center py-5 text-muted">
-                <i class="fa-regular fa-folder-open fa-3x mb-3 opacity-25"></i>
+            <div class="text-center py-5">
+                <i class="fa-regular fa-folder-open fa-3x mb-3"></i>
                 <p>No hay empresas registradas aún.</p>
             </div>
         @endforelse

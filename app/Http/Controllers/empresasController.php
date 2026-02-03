@@ -3,91 +3,116 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\empresas;
-use Illuminate\Validation\ValidationException;
+use App\Models\Empresas;
+use Illuminate\Support\Facades\Storage;
+use Exception;
 
-
-class empresasController extends Controller
+class EmpresasController extends Controller
 {
     public function index() {
-            $empresas = empresas::orderBy('updated_at','desc')->paginate(10);
-            return view('index', compact('empresas'));
+        $empresas = Empresas::orderBy('updated_at', 'desc')->paginate(10);
+        return view('index', compact('empresas'));
     }
 
     public function ag_empresa() {
-            return view('agregar.agEmpresa');
+        return view('agregar.agEmpresa');
     }
-    
-    public function addEmpresa(Request $request)
-        {
-            $request->validate([
-                'nombre' => 'required|string|max:255',
-                'encargado' => 'required|string|max:255',
-                'fotoEmpresa' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            ]);
 
-            $rutaFoto = 'fotos/profile.jpg'; // ruta por defecto
 
-            if ($request->hasFile('fotoEmpresa')) {
-                $rutaFoto = $request->file('fotoEmpresa')->store('fotos', 'public');
-            }
-
-            empresas::create([
-                'nombre' => $request->nombre,
-                'encargado' => $request->encargado,
-                'foto' => $rutaFoto,
-            ]);
-
-            return redirect('/')->with('success', 'Empresa registrada correctamente');
-        }
-// =================================================================
-    public function edEmpresa($id_empresa){
-        
-        $empresa_mod = empresas::findOrFail($id_empresa);
-        if (!$empresa_mod) {
-            return redirect()->back()->with('error', 'Empresa no encontrada');
-        }
-        return view('editar.edEmpresa', compact('empresa_mod'));
-    }
-// =================================================================
-    public function updateEmpresa(Request $request, $empresa_mod)
+    private function validarYProcesar(Request $request, $empresa = null) 
     {
+        // 1. Validar campos (incluyendo los nuevos de la migración)
         $request->validate([
-            'nombre' => 'required|string|max:255',
-            'encargado' => 'required|string|max:255',
-            'fotoEmpresa' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'nombre'          => 'required|string|max:255',
+            'encargado'       => 'required|string|max:255',
+            'correo'          => 'required|email|max:255',
+            'ubicacion'       => 'nullable|string|max:500',
+            'fotoEmpresa'     => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'calendario'      => 'nullable|mimes:pdf,jpg,jpeg,png|max:4096',
+            'esquemas'        => 'nullable|mimes:pdf,jpg,jpeg,png|max:4096',
+            'especificaciones'=> 'nullable|mimes:pdf,jpg,jpeg,png|max:4096',
         ]);
 
-        $empresa_new = empresas::findOrFail($empresa_mod);
+        // 2. Preparar datos base
+            $datos = $request->only(['nombre', 'encargado', 'correo', 'ubicacion']);
 
-        $datos = [
-            'nombre' => $request->input('nombre'),
-            'encargado' => $request->input('encargado'),
+        // 3. Procesar archivos dinámicamente
+        // Mapeo: 'nombre_en_formulario' => 'nombre_en_base_de_datos'
+        $archivos = [
+            'fotoEmpresa'      => 'foto',
+            'calendario'       => 'calendario',
+            'esquemas'         => 'esquemas',
+            'especificaciones' => 'especificaciones'
         ];
 
-        if ($request->hasFile('fotoEmpresa')) {
-            $foto = $request->file('fotoEmpresa');
-            $nombreLimpio = str_replace(' ', '_', $datos['nombre']);
-            $nombreArchivo = $nombreLimpio . '_' . time() . '.' . $foto->getClientOriginalExtension();
-            $foto->storeAs('fotos', $nombreArchivo, 'public');
-            $datos['foto'] = 'fotos/' . $nombreArchivo;
+        foreach ($archivos as $input => $columna) {
+            if ($request->hasFile($input)) {
+                // Si estamos editando y existe un archivo viejo, lo borramos (opcional pero recomendado)
+                if ($empresa && $empresa->$columna && $empresa->$columna !== 'fotos/profile.jpg') {
+                    Storage::disk('public')->delete($empresa->$columna);
+                }
+                
+                // Guardar el nuevo archivo
+                $datos[$columna] = $request->file($input)->store('fotos', 'public');
+            }
         }
 
-        $empresa_new->update($datos);
-
-        return redirect()->back()->with('success', 'Empresa actualizada correctamente'); 
+        return $datos;
     }
-// =================================================================
-    public function delEmpresa($id_empresa){
-                try {
-                    $registro = empresas::findOrFail($id_empresa);
-                    $registro->delete();
-                    
-                    return redirect()->back()
-                        ->with('success', 'Registro eliminado correctamente');
-                } catch (\Exception $e) {
-                    return redirect()->back()
-                        ->with('error', 'Error al eliminar el registro');
+
+    public function addEmpresa(Request $request)
+    {
+        try {
+            $datos = $this->validarYProcesar($request);
+            
+            // Asignar foto por defecto si no se subió ninguna
+            if (!isset($datos['foto'])) {
+                $datos['foto'] = 'fotos/profile.jpg';
+            }
+
+            Empresas::create($datos);
+
+            return redirect('/')->with('success', 'Empresa registrada correctamente');
+        } catch (Exception $e) {
+            return redirect()->back()->withInput()->with('error', 'Error al registrar: ' . $e->getMessage());
+        }
+    }
+
+    public function edEmpresa($id_empresa) {
+        $empresa_mod = Empresas::findOrFail($id_empresa);
+        return view('editar.edEmpresa', compact('empresa_mod'));
+    }
+
+    public function updateEmpresa(Request $request, $id_empresa)
+    {
+        try {
+            $empresa = Empresas::findOrFail($id_empresa);
+            $datos = $this->validarYProcesar($request, $empresa);
+
+            $empresa->update($datos);
+
+            return redirect('/')->with('success', 'Empresa actualizada correctamente');
+        } catch (Exception $e) {
+            return redirect()->back()->withInput()->with('error', 'Error al actualizar: ' . $e->getMessage());
+        }
+    }
+
+    public function delEmpresa($id_empresa) {
+        try {
+            $registro = Empresas::findOrFail($id_empresa);
+            
+            // Borrar archivos del storage antes de eliminar el registro (excepto el default)
+            $columnasArchivos = ['foto', 'calendario', 'esquemas', 'especificaciones'];
+            foreach ($columnasArchivos as $col) {
+                if ($registro->$col && $registro->$col !== 'fotos/profile.jpg') {
+                    Storage::disk('public')->delete($registro->$col);
                 }
             }
+
+            $registro->delete();
+            return redirect()->back()->with('success', 'Registro eliminado correctamente');
+        } catch (Exception $e) {
+            return redirect()->back()->with('error', 'Error al eliminar el registro');
+        }
+    }
 }

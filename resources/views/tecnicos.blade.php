@@ -202,8 +202,8 @@
                 </div>
             </div>
         @empty
-            <div class="text-center py-5 text-muted">
-                <i class="fa-solid fa-users-slash fa-3x mb-3 opacity-25"></i>
+            <div class="text-center py-5 ">
+                <i class="fa-solid fa-users-slash fa-3x mb-3"></i>
                 <p>No hay técnicos registrados en el sistema.</p>
             </div>
         @endforelse

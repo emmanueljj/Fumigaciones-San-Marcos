@@ -1,236 +1,173 @@
 @extends('layouts.plantilla')
 
-@section('tittle', 'Agregar Servicio')
+@section('title', 'Agregar Servicio')
 
 @section('titular')
 <x-navbar-3 :id_mes="$id_mes" :empresa="$empresa">
     Agregar Servicio
 </x-navbar-3>
-@endSection
+@endsection
 
 @section('contenido')
 <style>
-    /* Estilos Dark Específicos */
-    .card-dark {
-        background-color: #1a1c20;
+    .card-dark { background-color: #1a1c20; border: 1px solid #2d3035; border-radius: 20px; color: #e0e0e0; }
+    .input-dark { background-color: #0f1012; border: 1px solid #2d3035; color: #fff !important; border-radius: 12px; padding: 0.75rem; transition: 0.3s; }
+    .input-dark:focus { border-color: #6dacd6; box-shadow: 0 0 0 4px rgba(109, 172, 214, 0.1); outline: none; color: #6dacd6 !important; }
+    .text-label { color: rgba(224, 224, 224, 0.5); font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Componente de Carga Estilo Glass */
+    .file-glass-container {
+        background: linear-gradient(145deg, #16181d, #1a1c20);
         border: 1px solid #2d3035;
         border-radius: 16px;
-        color: #e0e0e0;
+        padding: 1.25rem;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .text-label { color: #a0a0a0; font-size: 0.9rem; margin-bottom: 0.5rem; display: block; }
-    .input-dark {
-        background-color: #0f1012;
-        border: 1px solid #2d3035;
-        color: #e0e0e0;
-        border-radius: 8px;
-        padding: 0.7rem;
-    }
-    .input-dark:focus { background-color: #141619; border-color: #4a4d55; color: #fff; outline: none; }
+    .file-glass-container:hover { border-color: rgba(109, 172, 214, 0.5); transform: translateY(-2px); }
     
-    /* Zona de firma oscura */
-    .firma-preview-dark {
-        border: 2px dashed #3f444d;
-        border-radius: 12px;
-        padding: 2rem;
-        background-color: #141619; /* Fondo muy oscuro para contraste */
-        min-height: 150px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        transition: border-color 0.3s;
-    }
-    .firma-preview-dark:hover { border-color: #6dacd6; }
-    
-    .firma-preview-dark img {
-        max-width: 100%;
-        max-height: 200px;
-        filter: invert(1); /* Truco: si la firma es negra y el fondo oscuro, invertimos para que sea blanca (opcional) */
-        border-radius: 8px;
+    .icon-shape {
+        width: 44px; height: 44px; background: #0f1012; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center; color: #6dacd6;
     }
 
-    /* Input date dark mode */
+    /* Listas dinámicas y Badges */
+    .selection-list { background: #0f1012; border: 1px solid #2d3035; border-radius: 16px; min-height: 100px; padding: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
+    .badge-item { 
+        background: rgba(109, 172, 214, 0.1); color: #6dacd6; border: 1px solid rgba(109, 172, 214, 0.2); 
+        padding: 6px 14px; border-radius: 10px; display: inline-flex; align-items: center; font-size: 0.8rem; font-weight: 600;
+    }
+    .remove-item { cursor: pointer; margin-left: 10px; color: rgba(214, 109, 109, 0.6); transition: 0.2s; }
+    .remove-item:hover { color: #d66d6d; }
+
+    .input-file-real { position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer; }
     input[type="date"] { color-scheme: dark; }
+    
+    .ui-autocomplete { 
+        background: #1a1c20 !important; border: 1px solid #2d3035 !important; border-radius: 12px !important; 
+        color: #fff; z-index: 9999 !important; box-shadow: 0 15px 30px rgba(0,0,0,0.5) !important;
+    }
+    .ui-helper.hidden-accesible{
+        display: none;
+    }
 </style>
 
 <div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-7 col-lg-6">
+    <form action="/addServicio/{{ $id_mes }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        <div class="row g-4">
             
-            <div class="card-dark mb-4 p-3 d-flex flex-row align-items-center justify-content-between">
-                <div>
-                    <h5 class="mb-1 text-light">{{ $empresa->nombre }}</h5>
-                    <p class="mb-0 small">
-                        <i class="fa-solid fa-calendar-days me-1"></i> 
-                        {{ $mes->fecha_I }} / {{ $mes->fecha_f }}
-                    </p>
+            <div class="col-lg-4">
+                <div class="card-dark p-4 h-100 shadow-lg border-0">
+                    <h5 class="mb-4 fw-light text-white"><i class="fa-solid fa-sliders me-2 text-info"></i>Configuración</h5>
+                    
+                    <div class="mb-4">
+                        <label class="text-label">Fecha del reporte</label>
+                        <input type="date" name="fecha" class="form-control input-dark" required 
+                               value="{{ date('Y-m-d') }}" min="{{ $mes->fecha_I }}" max="{{ $mes->fecha_f }}">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="text-label">Control Perimetral (PDF)</label>
+                        <div class="file-glass-container">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-shape" id="iconPerimetral">
+                                    <i class="fa-solid fa-file-shield fa-lg"></i>
+                                </div>
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <span class="d-block text-white small" id="namePerimetral" style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">Seleccionar archivo</span>
+                                    <span style="color: #6dacd6; font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">Subir Reporte</span>
+                                </div>
+                                <input type="file" name="controlPerimetral" class="input-file-real" 
+                                       accept="application/pdf, image/*" onchange="handleFileUpdate(this, 'namePerimetral', 'iconPerimetral')">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="text-label">Observaciones generales</label>
+                        <textarea name="observacion" class="form-control input-dark" rows="4" placeholder="Escribe detalles relevantes..."></textarea>
+                    </div>
                 </div>
-                <i class="fa-solid fa-building fa-2x opacity-25"></i>
             </div>
 
-            <div class="card-dark shadow-lg">
-                <div class="card-body p-4">
-                    <h4 class="card-title mb-4 text-light fw-light">
-                        Nuevo Servicio
-                    </h4>
+            <div class="col-lg-8">
+                <div class="card-dark p-4 shadow-lg border-0 h-100 d-flex flex-column">
+                    <h5 class="mb-4 fw-light text-white"><i class="fa-solid fa-boxes-stacked me-2 text-info"></i>Recursos Aplicados</h5>
 
-                    <form action="/addServicio/{{ $id_mes }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-
-                        <div class="mb-3">
-                            <label for="fecha" class="text-label">
-                                Fecha del Servicio <span class="text-danger">*</span>
-                            </label>
-                            <input type="date" 
-                                   class="form-control input-dark @error('fecha') is-invalid @enderror" 
-                                   id="fecha" 
-                                   name="fecha" 
-                                   value="{{ old('fecha', date('Y-m-d')) }}"
-                                   min="{{ $mes->fecha_I }}"
-                                   max="{{ $mes->fecha_f }}"
-                                   required>
-                        </input>
-                            @error('fecha') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="vb_nombre" class="text-label">
-                                Nombre (Visto Bueno)
-                            </label>
-                            <input type="text" 
-                                   class="form-control input-dark @error('vb_nombre') is-invalid @enderror" 
-                                   id="vb_nombre" 
-                                   name="vb_nombre" 
-                                   value="{{ old('vb_nombre') }}"
-                                   placeholder="Nombre de quien autoriza"
-                                   maxlength="255">
-                            @error('vb_nombre') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="vb_firma" class="text-label">
-                                Firma Digital (Imagen)
-                            </label>
-                            {{-- contenedor de firma imagen --}}
-                            <div class="text-center mb-3">
-                                <div class="firma-preview-dark" id="firmaPreview">
-                                    <i class="fa-solid fa-signature text-secondary opacity-50" style="font-size: 2.5rem;"></i>
-                                    <p class="text-secondary opacity-50 mt-2 small">Vista previa de firma</p>
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="text-label">Añadir Productos</label>
+                            <input type="text" id="buscar-pr" class="form-control input-dark mb-3" placeholder="Buscar por nombre..." data-url="{{ route('productos.buscar') }}">
+                            <div id="lista-productos" class="selection-list">
                                 </div>
-                            </div>
-
-                            <input type="file" 
-                                   class="form-control input-dark @error('vb_firma') is-invalid @enderror" 
-                                   id="vb_firma" 
-                                   name="vb_firma"
-                                   accept="image/*"
-                                   onchange="previewFirma(event)">
-                            @error('vb_firma') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
-                        <div class="d-flex gap-2 pt-2">
-                            <a href="/servicios/{{ $id_mes }}" class="btn w-50" style="background-color: #2c1a1a; color: #d66d6d; border: 1px solid #4a2424;">
-                                Cancelar
+                        <div class="col-md-6">
+                            <label class="text-label">Asignar Técnicos</label>
+                            <input type="text" id="buscar-tec" class="form-control input-dark mb-3" placeholder="Buscar personal..." data-url="{{ route('tecnicos.buscar') }}">
+                            <div id="lista-tecnicos" class="selection-list">
+                                </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-auto pt-5">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <a href="/servicios/{{ $id_mes }}" class="btn btn-link text-decoration-none p-0" style="color: rgba(224,224,224,0.4); font-size: 0.9rem;">
+                                <i class="fa-solid fa-chevron-left me-1"></i> Volver a la lista
                             </a>
-                            <button type="submit" class="btn w-50" style="background-color: #1c2a35; color: #6dacd6; border: 1px solid #243b4a;">
-                                <i class="fa-solid fa-check me-2"></i> Guardar
+                            <button type="submit" class="btn px-5 py-3 shadow-sm" style="background-color: #1c2a35; color: #6dacd6; border: 1px solid #243b4a; border-radius: 15px; font-weight: 600;">
+                                <i class="fa-solid fa-paper-plane me-2"></i> Registrar Servicio
                             </button>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
-
-            @if(session('errorMensaje'))
-                <div class="alert alert-danger bg-opacity-10 border-danger text-danger mt-3" role="alert">
-                    <i class="fa-solid fa-triangle-exclamation me-2"></i> {{ session('errorMensaje') }}
-                </div>
-            @endif
-
         </div>
-    </div>
+    </form>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
 <script>
-  
-    // JS Original de fechas
-    document.addEventListener('DOMContentLoaded', function() {
-        const fechaInput = document.getElementById('fecha');
-        if(fechaInput){
-            const min = fechaInput.getAttribute('min');
-            const max = fechaInput.getAttribute('max');
-            fechaInput.addEventListener('change', function() {
-                const fecha = this.value;
-                if (fecha < min || fecha > max) {
-                    alert('La fecha debe estar dentro del periodo: ' + min + ' a ' + max);
-                    this.value = min;
-                }
-            });
-        }
-    });
-
-   // 1. Tu función de previsualización original (ahora compatible con pegado)
-    function previewFirma(event) {
-        const file = event.target.files[0];
-        const preview = document.getElementById('firmaPreview');
-        
-        if (file) {
-            // Validación de tamaño (2MB)
-            if (file.size > 2 * 1024 * 1024) {
-                alert('La imagen es muy grande. Máximo 2MB permitido.');
-                event.target.value = '';
-                return;
-            }
-            // Validación de tipo
-            if (!file.type.startsWith('image/')) {
-                alert('Por favor selecciona una imagen válida.');
-                event.target.value = '';
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                // Actualizamos el contenedor con la imagen
-                preview.innerHTML = `<img src="${e.target.result}" alt="Preview" style="max-height: 120px; border-radius: 8px;">`;
-            };
-            reader.readAsDataURL(file);
-        } else {
-            // Reset al estado original si no hay archivo
-            preview.innerHTML = `
-                <i class="fa-solid fa-signature text-secondary opacity-50" style="font-size: 2.5rem;"></i>
-                <p class="text-secondary opacity-50 mt-2 small">Vista previa de firma</p>
-            `;
+    function handleFileUpdate(input, labelId, iconId) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            document.getElementById(labelId).innerText = file.name;
+            document.getElementById(labelId).style.color = "#fff";
+            document.getElementById(iconId).style.background = "rgba(109, 172, 214, 0.15)";
         }
     }
 
-    // 2. Evento para PEGAR imagen
-    window.addEventListener('paste', function(e) {
-        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-        
-        for (let index in items) {
-            const item = items[index];
-            
-            if (item.kind === 'file' && item.type.indexOf('image') !== -1) {
-                const blob = item.getAsFile();
-                
-                // Creamos el archivo y lo inyectamos al input
-                const dataTransfer = new DataTransfer();
-                const file = new File([blob], "firma_pegada.png", { type: blob.type });
-                dataTransfer.items.add(file);
-                
-                const inputFirma = document.getElementById('vb_firma'); // Tu ID de input
-                inputFirma.files = dataTransfer.files;
-                
-                // CLAVE: Llamamos a la función CORRECTA: previewFirma
-                const fakeEvent = { 
-                    target: { 
-                        files: [file] 
-                    } 
-                };
-                previewFirma(fakeEvent); 
-                
-                console.log('Imagen de firma pegada y previsualizada');
+    function addItem(containerId, inputName, id, text) {
+        const container = $(`#${containerId}`);
+        if (container.find(`input[value="${id}"]`).length > 0) return;
+        const badge = $(`
+            <div class="badge-item">
+                <input type="hidden" name="${inputName}[]" value="${id}">
+                <span>${text}</span>
+                <i class="fa-solid fa-xmark remove-item" onclick="this.parentElement.remove()"></i>
+            </div>
+        `);
+        container.append(badge);
+    }
+
+    $(document).ready(function() {
+        const autocompleteConfig = (containerId, inputName) => ({
+            source: function(request, response) {
+                $.getJSON($(this.element).data('url'), { q: request.term }, response);
+            },
+            select: function(event, ui) {
+                addItem(containerId, inputName, ui.item.id, ui.item.label);
+                $(this).val('');
+                return false;
             }
-        }
+        });
+
+        $("#buscar-pr").autocomplete(autocompleteConfig('lista-productos', 'productos'));
+        $("#buscar-tec").autocomplete(autocompleteConfig('lista-tecnicos', 'tecnicos'));
     });
 </script>
-@endSection
+@endsection

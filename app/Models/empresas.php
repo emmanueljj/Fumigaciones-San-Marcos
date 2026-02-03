@@ -11,24 +11,25 @@ class Empresas extends Model
 
     protected $table = 'empresas';
     protected $primaryKey = 'id_empresa';
-    public $incrementing = true;
-    protected $fillable = ['nombre', 'encargado', 'foto'];
+    protected $fillable = ['nombre', 'encargado', 'foto', 'ubicacion', 'calendario', 'esquemas', 'especificaciones', 'correo'];
 
-    // Relación: una empresa tiene muchos meses
+    // Relación: Una empresa tiene muchos meses (1 a Muchos)
     public function meses()
     {
         return $this->hasMany(Meses::class, 'id_empresa');
     }
 
-    // Relación: una empresa tiene muchos servicios a través de meses
+    // RELACIÓN ESPECIAL: Acceder a los servicios directamente
+    // "Tengo muchos Servicios a través de la tabla Meses"
     public function servicios()
     {
         return $this->hasManyThrough(
-            Servicio::class,
-            'id_empresa', // Foreign key en Mes
-            'id_mes',     // Foreign key en Servicio
-            'id_empresa', // Local key en Empresa
-            'id_mes'      // Local key en Mes
+            Servicio::class, 
+            Meses::class, 
+            'id_empresa', // FK en la tabla meses
+            'id_mes',     // FK en la tabla servicios
+            'id_empresa', // Local key en empresas
+            'id_mes'      // Local key en meses
         );
     }
 }
