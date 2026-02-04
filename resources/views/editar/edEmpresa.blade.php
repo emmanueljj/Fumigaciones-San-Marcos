@@ -19,6 +19,7 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: center;
         border-right: 1px solid #2d3035;
     }
     .profile-upload-container {

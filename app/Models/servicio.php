@@ -37,4 +37,10 @@ class Servicio extends Model
     {
         return $this->belongsTo(Meses::class, 'id_mes');
     }
+
+    public function actividades()
+    {
+        // Asegúrate de que 'id_servicio' sea el nombre de la llave foránea en tu tabla actividades
+        return $this->hasMany(Actividades::class, 'id_servicio');
+    }
 }

@@ -18,26 +18,26 @@ class EmpresasController extends Controller
         return view('agregar.agEmpresa');
     }
 
-
+    /**
+     * Procesa la validación y el almacenamiento de archivos
+     */
     private function validarYProcesar(Request $request, $empresa = null) 
     {
-        // 1. Validar campos (incluyendo los nuevos de la migración)
+        // 1. Validar campos (Calendario y Especificaciones ahora son estrictamente imágenes)
         $request->validate([
-            'nombre'          => 'required|string|max:255',
-            'encargado'       => 'required|string|max:255',
-            'correo'          => 'required|email|max:255',
-            'ubicacion'       => 'nullable|string|max:500',
-            'fotoEmpresa'     => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'calendario'      => 'nullable|mimes:pdf,jpg,jpeg,png|max:4096',
-            'esquemas'        => 'nullable|mimes:pdf,jpg,jpeg,png|max:4096',
-            'especificaciones'=> 'nullable|mimes:pdf,jpg,jpeg,png|max:4096',
+            'nombre'           => 'required|string|max:255',
+            'encargado'        => 'required|string|max:255',
+            'correo'           => 'required|email|max:255',
+            'ubicacion'        => 'nullable|string|max:500',
+            'fotoEmpresa'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'calendario'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096', // Solo Imagen
+            'esquemas'         => 'nullable|mimes:pdf|max:5120', // Solo PDF (Plano técnico)
+            'especificaciones' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096', // Solo Imagen
         ]);
 
-        // 2. Preparar datos base
-            $datos = $request->only(['nombre', 'encargado', 'correo', 'ubicacion']);
+        $datos = $request->only(['nombre', 'encargado', 'correo', 'ubicacion']);
 
-        // 3. Procesar archivos dinámicamente
-        // Mapeo: 'nombre_en_formulario' => 'nombre_en_base_de_datos'
+        // 2. Mapeo de inputs de formulario a columnas de la base de datos
         $archivos = [
             'fotoEmpresa'      => 'foto',
             'calendario'       => 'calendario',
@@ -47,13 +47,14 @@ class EmpresasController extends Controller
 
         foreach ($archivos as $input => $columna) {
             if ($request->hasFile($input)) {
-                // Si estamos editando y existe un archivo viejo, lo borramos (opcional pero recomendado)
+                // Borrar archivo anterior si existe y no es el perfil por defecto
                 if ($empresa && $empresa->$columna && $empresa->$columna !== 'fotos/profile.jpg') {
                     Storage::disk('public')->delete($empresa->$columna);
                 }
                 
-                // Guardar el nuevo archivo
-                $datos[$columna] = $request->file($input)->store('fotos', 'public');
+                // Determinamos la carpeta según el tipo de archivo para orden
+                $folder = ($input === 'fotoEmpresa') ? 'fotos_perfil' : 'documentos_empresas';
+                $datos[$columna] = $request->file($input)->store($folder, 'public');
             }
         }
 
@@ -65,16 +66,14 @@ class EmpresasController extends Controller
         try {
             $datos = $this->validarYProcesar($request);
             
-            // Asignar foto por defecto si no se subió ninguna
             if (!isset($datos['foto'])) {
                 $datos['foto'] = 'fotos/profile.jpg';
             }
 
             Empresas::create($datos);
-
             return redirect('/')->with('success', 'Empresa registrada correctamente');
         } catch (Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Error al registrar: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Error: ' . $e->getMessage());
         }
     }
 
@@ -90,19 +89,17 @@ class EmpresasController extends Controller
             $datos = $this->validarYProcesar($request, $empresa);
 
             $empresa->update($datos);
-
             return redirect('/')->with('success', 'Empresa actualizada correctamente');
         } catch (Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Error al actualizar: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Error: ' . $e->getMessage());
         }
     }
 
     public function delEmpresa($id_empresa) {
         try {
             $registro = Empresas::findOrFail($id_empresa);
-            
-            // Borrar archivos del storage antes de eliminar el registro (excepto el default)
             $columnasArchivos = ['foto', 'calendario', 'esquemas', 'especificaciones'];
+            
             foreach ($columnasArchivos as $col) {
                 if ($registro->$col && $registro->$col !== 'fotos/profile.jpg') {
                     Storage::disk('public')->delete($registro->$col);
@@ -110,9 +107,9 @@ class EmpresasController extends Controller
             }
 
             $registro->delete();
-            return redirect()->back()->with('success', 'Registro eliminado correctamente');
+            return redirect()->back()->with('success', 'Empresa eliminada');
         } catch (Exception $e) {
-            return redirect()->back()->with('error', 'Error al eliminar el registro');
+            return redirect()->back()->with('error', 'No se pudo eliminar');
         }
     }
 }

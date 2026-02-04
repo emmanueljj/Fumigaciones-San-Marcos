@@ -15,19 +15,26 @@
         background-color: #0f1012; border: 1px solid #2d3035; color: #e0e0e0 !important; 
         border-radius: 12px; padding: 0.7rem 1rem; transition: 0.3s;
     }
-    /* El texto resalta en azul al escribir para máxima visibilidad */
     .input-dark:focus { border-color: #6dacd6; outline: none; color: #6dacd6 !important; background-color: #141619; }
     .text-label { color: rgba(224, 224, 224, 0.5); font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem; display: block; text-transform: uppercase; }
 
-    /* Zonas de Carga de Archivos */
+    /* Estilo para Zonas de Carga */
     .upload-zone-custom {
         border: 2px dashed #2d3035; border-radius: 16px; padding: 1.5rem;
         background-color: #0f1012; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: pointer; text-align: center; position: relative;
+        cursor: pointer; text-align: center; position: relative; outline: none;
     }
-    .upload-zone-custom:hover { border-color: #6dacd6; background-color: #141619; transform: translateY(-2px); }
-    .preview-render { max-height: 150px; border-radius: 12px; display: block; margin: 10px auto 0; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+    .upload-zone-custom:hover { border-color: #6dacd6; background-color: #141619; }
     
+    /* Selección por Enfoque (Igual que en agregar empresa) */
+    .upload-zone-custom:focus, .upload-zone-custom.active-paste { 
+        border-color: #6dacd6; 
+        background: rgba(109, 172, 214, 0.05);
+        border-style: solid;
+        box-shadow: 0 0 0 3px rgba(109, 172, 214, 0.1);
+    }
+
+    .preview-render { max-height: 150px; border-radius: 12px; display: none; margin: 10px auto 0; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
     .firma-render { max-height: 100px; filter: invert(0.9); } 
 
     .btn-back-minimal {
@@ -87,30 +94,30 @@
                         <div class="row g-4 mb-4">
                             <div class="col-md-6">
                                 <label class="text-label">Foto de Evidencia</label>
-                                <div class="upload-zone-custom" onclick="document.getElementById('foto').click()">
+                                <div class="upload-zone-custom paste-area" data-input="foto" tabindex="0" onclick="document.getElementById('foto').click()">
                                     <div id="evidenciaPlaceholder" style="{{ $actividad->foto ? 'display:none' : '' }}">
                                         <i class="fa-solid fa-camera fa-lg mb-2" style="color: #6dacd6;"></i>
-                                        <p class="small mb-0 text-white">Cambiar Foto</p>
+                                        <p class="small mb-0 text-white">Clic o Pegar</p>
                                     </div>
                                     <img id="previewFoto" class="preview-render" 
                                          src="{{ $actividad->foto ? asset('storage/' . $actividad->foto) : '' }}"
                                          style="{{ $actividad->foto ? 'display:block' : 'display:none' }}">
                                 </div>
-                                <input type="file" id="foto" name="foto" class="d-none" accept="image/*" onchange="processPreview(this, 'previewFoto', 'evidenciaPlaceholder')">
+                                <input type="file" id="foto" name="foto" class="d-none" accept="image/*">
                             </div>
 
                             <div class="col-md-6">
                                 <label class="text-label">Firma de Conformidad</label>
-                                <div class="upload-zone-custom" onclick="document.getElementById('vbFirma').click()">
+                                <div class="upload-zone-custom paste-area" data-input="vbFirma" tabindex="0" onclick="document.getElementById('vbFirma').click()">
                                     <div id="firmaPlaceholder" style="{{ $actividad->vbFirma ? 'display:none' : '' }}">
                                         <i class="fa-solid fa-signature fa-lg mb-2" style="color: #6dacd6;"></i>
-                                        <p class="small mb-0 text-white">Actualizar Firma</p>
+                                        <p class="small mb-0 text-white">Clic o Pegar</p>
                                     </div>
                                     <img id="previewFirma" class="preview-render firma-render" 
                                          src="{{ $actividad->vbFirma ? asset('storage/' . $actividad->vbFirma) : '' }}"
                                          style="{{ $actividad->vbFirma ? 'display:block' : 'display:none' }}">
                                 </div>
-                                <input type="file" id="vbFirma" name="vbFirma" class="d-none" accept="image/*" onchange="processPreview(this, 'previewFirma', 'firmaPlaceholder')">
+                                <input type="file" id="vbFirma" name="vbFirma" class="d-none" accept="image/*">
                             </div>
                         </div>
 
@@ -130,34 +137,67 @@
 </div>
 
 <script>
-    function processPreview(input, imgId, placeholderId) {
-        const file = input.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById(imgId).src = e.target.result;
-                document.getElementById(imgId).style.display = 'block';
-                document.getElementById(placeholderId).style.display = 'none';
-            }
-            reader.readAsDataURL(file);
-        }
-    }
+    document.addEventListener('DOMContentLoaded', function () {
+        let activeInputId = null;
 
-    window.addEventListener('paste', function(e) {
-        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-        for (let item of items) {
-            if (item.kind === 'file' && item.type.startsWith('image/')) {
-                const blob = item.getAsFile();
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(new File([blob], "edit_upload.png", { type: blob.type }));
-                
-                // Prioridad de pegado en edición: Si el usuario hace hover o clic en una zona, 
-                // pero para simplificar, usaremos la lógica de "si la firma no se ha tocado en esta sesión"
-                const firmaInput = document.getElementById('vbFirma');
-                firmaInput.files = dataTransfer.files;
-                processPreview(firmaInput, 'previewFirma', 'firmaPlaceholder');
+        // 1. Manejar el enfoque de las áreas
+        document.querySelectorAll('.paste-area').forEach(area => {
+            area.addEventListener('click', function() { this.focus(); });
+            
+            area.addEventListener('focus', function() {
+                activeInputId = this.dataset.input;
+                this.classList.add('active-paste');
+            });
+
+            area.addEventListener('blur', function() {
+                this.classList.remove('active-paste');
+            });
+        });
+
+        // 2. Previsualización dinámica
+        function updatePreview(file, inputId) {
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewId = inputId === 'vbFirma' ? 'previewFirma' : 'previewFoto';
+                    const placeholderId = inputId === 'vbFirma' ? 'firmaPlaceholder' : 'evidenciaPlaceholder';
+                    
+                    const img = document.getElementById(previewId);
+                    const ph = document.getElementById(placeholderId);
+                    
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                    ph.style.display = 'none';
+                }
+                reader.readAsDataURL(file);
             }
         }
+
+        // 3. Pegado Global
+        document.addEventListener('paste', function (e) {
+            if (!activeInputId) return;
+
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let item of items) {
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    const blob = item.getAsFile();
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(new File([blob], "edit_pasted.png", { type: blob.type }));
+                    
+                    const targetInput = document.getElementById(activeInputId);
+                    targetInput.files = dataTransfer.files;
+                    
+                    updatePreview(blob, activeInputId);
+                }
+            }
+        });
+
+        // 4. Sincronizar con selección manual
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', function() {
+                updatePreview(this.files[0], this.id);
+            });
+        });
     });
 </script>
 @endsection

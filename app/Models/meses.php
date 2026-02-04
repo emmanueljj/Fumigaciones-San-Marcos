@@ -14,19 +14,24 @@ class Meses extends Model
     public $incrementing = true;
     protected $fillable = ['fecha_I', 'fecha_f', 'id_empresa']; // Ajusta según tus columnas reales
 
-    // Relación inversa: un mes pertenece a una empresa
-    public function empresa()
+    public function relEmpresa()
     {
         return $this->belongsTo(Empresas::class, 'id_empresa');
     }
 
-    // Relación: un mes tiene muchos servicios
     public function servicios()
     {
-        return $this->hasMany(Servicio::class, 'id_mes');
+        return $this->hasMany(servicio::class, 'id_mes');
     }
     
     public function actividades() {
         return $this->hasMany(actividades::class, 'id_servicio');
     }
+
+    public function empresa()
+    {
+        // El segundo parámetro es la llave foránea en tu tabla 'meses'
+        return $this->belongsTo(Empresas::class, 'id_empresa');
+    }
+
 }

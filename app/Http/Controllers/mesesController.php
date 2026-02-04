@@ -186,25 +186,36 @@ class mesesController extends Controller
         }
     }
    // =================================================================
-    public function generarPDF($id_mes) {
-        // 1. Obtenemos el mes con sus servicios y las actividades de cada servicio
-        // Usamos 'with' para traer las relaciones en cascada
-        $mes = Meses::with(['servicios.actividades'])->findOrFail($id_mes);
-        
-        // 2. Obtenemos la empresa para el encabezado
-        $empresa = Empresas::findOrFail($mes->id_empresa);
+public function generarPDF($id_mes) {
 
-        // 3. Cargamos la vista especial para el PDF pasándole los datos
-        $pdf = PDF::loadView('pdf.reporte_mensual', [
-            'mes' => $mes,
-            'empresa' => $empresa,
-            'servicios' => $mes->servicios // Esto ya contiene las actividades por la carga de arriba
-        ]);
+    $mes = Meses::with([
+        'relEmpresa', 
+        'servicios.tecnicos', 
+        'servicios.productos', 
+        'servicios.actividades'
+    ])->findOrFail($id_mes);
+    
+    // 2. Extraemos la empresa directamente de la relación ya cargada
+    $empresa = $mes->relEmpresa;
 
-        // Configuración opcional: Papel A4 vertical
-        $pdf->setPaper('a4', 'portrait');
+    // 3. Preparamos los datos para la vista
+    // 'servicios' ahora contiene objetos con colecciones internas de tecnicos, productos y actividades
+    $data = [
+        'mes'       => $mes,
+        'empresa'   => $empresa,
+        'servicios' => $mes->servicios
+    ];
 
-        // 4. Retornamos el PDF para previsualizarlo
-        return $pdf->stream("Reporte_{$empresa->nombre}_{$mes->nombre}.pdf");
-    }
+    // 4. Generamos el PDF con la vista correspondiente
+    $pdf = PDF::loadView('pdf.reporte_mensual', $data);
+
+    // Configuración de página: A4 vertical para reportes técnicos
+    $pdf->setPaper('a4', 'portrait');
+
+    // 5. Retornamos el stream para previsualización
+    // Usamos el nombre de la empresa y el mes para el nombre del archivo
+    $filename = "Reporte_" . str_replace(' ', '_', $empresa->nombre) . "_{$mes->nombre}.pdf";
+    
+    return $pdf->stream($filename);
+}
 }

@@ -8,81 +8,53 @@
 
 @section('contenido')
 <style>
-    .form-card-custom {
-        background-color: #1a1c20;
-        border: 1px solid #2d3035;
-        border-radius: 20px;
-        color: #fff;
-        padding: 2rem;
-    }
-    .profile-section {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        border-right: 1px solid #2d3035;
-    }
-    .profile-upload-container {
-        position: relative;
-        width: 130px;
-        height: 130px;
-    }
-    .profile-img-preview {
-        width: 100%; height: 100%;
-        object-fit: cover;
-        border-radius: 20px; /* Estilo moderno cuadrado-redondeado */
-        border: 2px solid #2d3035;
-        background-color: #0f1012;
-    }
-    .btn-edit-photo {
-        position: absolute; bottom: -10px; right: -10px;
-        background-color: #6dacd6; color: #1a1c20;
-        border: none; width: 38px; height: 38px;
-        border-radius: 12px; display: flex;
-        align-items: center; justify-content: center;
-        cursor: pointer; transition: 0.3s;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-    }
-    .btn-edit-photo:hover { transform: translateY(-3px); background-color: #fff; }
+    .form-card-custom { background-color: #1a1c20; border: 1px solid #2d3035; border-radius: 20px; color: #fff; padding: 2rem; }
+    .profile-section { display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid #2d3035; }
     
-    .input-dark {
-        background-color: #0f1012 !important;
-        border: 1px solid #2d3035 !important;
-        color: #fff !important;
-        border-radius: 10px !important;
-        padding: 10px 15px !important;
+    .profile-upload-container { 
+        position: relative; width: 130px; height: 130px; 
+        cursor: pointer; border-radius: 20px; transition: 0.3s;
     }
-    .input-dark:focus { border-color: #6dacd6 !important; box-shadow: 0 0 0 0.25rem rgba(109, 172, 214, 0.1) !important; }
+    .profile-upload-container.active-paste { outline: 3px solid #6dacd6; outline-offset: 5px; }
+    .profile-img-preview { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; border: 2px solid #2d3035; background-color: #0f1012; }
+    
+    .btn-edit-photo {
+        position: absolute; bottom: -10px; right: -10px; background-color: #6dacd6; color: #1a1c20;
+        border: none; width: 38px; height: 38px; border-radius: 12px; display: flex;
+        align-items: center; justify-content: center; pointer-events: none;
+    }
+    
+    .input-dark { background-color: #0f1012 !important; border: 1px solid #2d3035 !important; color: #fff !important; border-radius: 10px !important; padding: 10px 15px !important; }
+    .input-dark:focus { border-color: #6dacd6 !important; outline: none; }
 
-    .file-box {
-        background: #141619;
-        border: 1px dashed #2d3035;
-        border-radius: 12px;
-        padding: 12px;
-        transition: 0.3s;
+    .file-box { 
+        background: #141619; border: 1px dashed #2d3035; border-radius: 12px; 
+        padding: 15px; transition: 0.3s; min-height: 160px; 
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        cursor: pointer; outline: none;
     }
-    .file-box:hover { border-color: #6dacd6; background: #1a1c20; }
-    .file-label { font-size: 0.75rem; color: #6dacd6; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; display: block; }
-    .paste-hint { font-size: 0.7rem; color: #a0a0a0; margin-top: 5px; display: block; }
+    .file-box:hover, .file-box:focus { border-color: #6dacd6; background: #1a1c20; }
+    .file-box.active-paste { border-color: #6dacd6; background: rgba(109, 172, 214, 0.05); border-style: solid; }
+
+    .file-label { font-size: 0.75rem; color: #6dacd6; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; pointer-events: none; }
+    .doc-preview { width: 100%; max-width: 120px; max-height: 80px; object-fit: contain; margin-top: 10px; display: none; border-radius: 5px; }
+    .icon-placeholder { font-size: 1.5rem; opacity: 0.3; margin-bottom: 5px; pointer-events: none; }
 </style>
 
 <div class="container py-1">
     <div class="form-card-custom shadow-lg">
         <form action="/addEmpresa" method="POST" enctype="multipart/form-data">
             @csrf
-
             <div class="row">
                 <div class="col-lg-3 profile-section mb-4 mb-lg-0">
-                    <div class="profile-upload-container">
-                        <img src="{{ url('imagenes/profile.jpg') }}" id="profileImg" class="profile-img-preview" alt="Logo">
+                    <div class="profile-upload-container paste-area" data-input="fotoEmpresa" tabindex="0">
+                        <img src="{{ url('imagenes/profile.jpg') }}" id="pv_fotoEmpresa" class="profile-img-preview" alt="Logo">
                         <input type="file" id="fotoEmpresa" accept="image/*" name="fotoEmpresa" class="d-none">
-                        <button type="button" id="btnEditFoto" class="btn-edit-photo">
-                            <i class="fa-solid fa-camera"></i>
-                        </button>
+                        <div class="btn-edit-photo"><i class="fa-solid fa-camera"></i></div>
                     </div>
                     <div class="text-center mt-3">
                         <span class="fw-bold d-block">Logotipo</span>
-                        <span class="paste-hint">Pega con Ctrl + V</span>
+                        <small class="opacity-50">Click o Pegar</small>
                     </div>
                 </div>
 
@@ -99,41 +71,46 @@
                             <input type="text" name="encargado" class="form-control input-dark" required value="{{ old('encargado') }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="file-label">Ubicación Física</label>
-                            <input type="text" name="ubicacion" class="form-control input-dark" value="{{ old('ubicacion') }}">
+                            <label class="file-label">Correo Electrónico</label>
+                            <input type="email" name="correo" class="form-control input-dark" required value="{{ old('correo') }}" placeholder="ejemplo@correo.com">
                         </div>
-
                         <div class="col-md-6">
-                            <label class="file-label">Correo electronico</label>
-                            
-                            <input type="email" name="correo" class="form-control input-dark" value="{{ old('correo') }}"
-                            placeholder="ejemplo@empresa.com">
+                            <label class="file-label">Ubicación Física</label>
+                            <input type="text" name="ubicacion" class="form-control input-dark" required value="{{ old('ubicacion') }}" placeholder="Calle, Número, Colonia">
                         </div>
                     </div>
 
                     <div class="row mt-4 g-3">
-                        <div class="col-12">
-                            <p class="file-label border-bottom pb-2" style="color: #a0a0a0;">Documentos (Formatos: PDF, JPG, PNG)</p>
-                        </div>
-                        
                         <div class="col-md-4">
-                            <div class="file-box text-center">
+                            <div class="file-box paste-area" data-input="inCalendario" tabindex="0">
                                 <label class="file-label"><i class="fa-solid fa-calendar-check me-2"></i>Calendario</label>
-                                <input type="file" name="calendario" accept="application/pdf, image/*" class="form-control form-control-sm input-dark">
+                                <div id="ph_inCalendario" class="icon-placeholder"><i class="fa-regular fa-image"></i></div>
+                                <img id="pv_inCalendario" class="doc-preview">
+                                <input type="file" id="inCalendario" name="calendario" accept="image/*" class="d-none">
                             </div>
                         </div>
 
                         <div class="col-md-4">
-                            <div class="file-box text-center">
+                            <div class="file-box text-center" onclick="document.getElementById('inEsquemas').click()" style="cursor: pointer;">
                                 <label class="file-label"><i class="fa-solid fa-diagram-project me-2"></i>Esquemas</label>
-                                <input type="file" name="esquemas" accept="application/pdf, image/*" class="form-control form-control-sm input-dark">
+                                <div id="displayEsquemas" class="d-flex flex-column align-items-center justify-content-center">
+                                    <div class="icon-shape mb-2" id="iconEsquemas" style="width: 45px; height: 45px; background: rgba(109, 172, 214, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #6dacd6;">
+                                        <i class="fa-solid fa-file-pdf fa-xl"></i>
+                                    </div>
+                                    <span id="nameEsquemas" style="font-size: 0.75rem; color: #e0e0e0; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        Subir plano PDF
+                                    </span>
+                                </div>
+                                <input type="file" id="inEsquemas" name="esquemas" accept="application/pdf" class="d-none" onchange="updateFileName(this, 'nameEsquemas', 'iconEsquemas')">
                             </div>
                         </div>
 
                         <div class="col-md-4">
-                            <div class="file-box text-center">
+                            <div class="file-box paste-area" data-input="inEspec" tabindex="0">
                                 <label class="file-label"><i class="fa-solid fa-file-contract me-2"></i>Especificaciones</label>
-                                <input type="file" name="especificaciones" accept="application/pdf, image/*" class="form-control form-control-sm input-dark">
+                                <div id="ph_inEspec" class="icon-placeholder"><i class="fa-regular fa-image"></i></div>
+                                <img id="pv_inEspec" class="doc-preview">
+                                <input type="file" id="inEspec" name="especificaciones" accept="image/*" class="d-none">
                             </div>
                         </div>
                     </div>
@@ -150,33 +127,59 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const btnEditFoto = document.getElementById('btnEditFoto');
-        const fotoInput = document.getElementById('fotoEmpresa');
-        const profileImage = document.getElementById('profileImg');
+    function updateFileName(input, labelId, iconId) {
+        const fileName = input.files[0] ? input.files[0].name : "Subir plano PDF";
+        document.getElementById(labelId).innerText = fileName;
+        if (input.files[0]) {
+            document.getElementById(iconId).style.color = "#fff";
+            document.getElementById(iconId).style.background = "#6dacd6";
+        }
+    }
 
-        function updatePreview(file) {
+    document.addEventListener('DOMContentLoaded', function () {
+        let activeInputId = null;
+
+        document.querySelectorAll('.paste-area').forEach(area => {
+            area.addEventListener('click', function() { this.focus(); });
+            area.addEventListener('focus', function() {
+                activeInputId = this.dataset.input;
+                this.classList.add('active-paste');
+            });
+            area.addEventListener('blur', function() { this.classList.remove('active-paste'); });
+        });
+
+        function updatePreview(file, inputId) {
             if (file && file.type.startsWith('image/')) {
                 const reader = new FileReader();
-                reader.onload = (e) => profileImage.src = e.target.result;
+                reader.onload = (e) => {
+                    const previewImg = document.getElementById('pv_' + inputId);
+                    const placeholder = document.getElementById('ph_' + inputId);
+                    if (previewImg) { previewImg.src = e.target.result; previewImg.style.display = 'block'; }
+                    if (placeholder) { placeholder.style.display = 'none'; }
+                };
                 reader.readAsDataURL(file);
             }
         }
 
-        btnEditFoto.addEventListener('click', () => fotoInput.click());
-        fotoInput.addEventListener('change', (e) => updatePreview(e.target.files[0]));
-
-        document.addEventListener('paste', (e) => {
+        document.addEventListener('paste', function (e) {
+            if (!activeInputId) return;
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             for (let item of items) {
                 if (item.kind === 'file' && item.type.startsWith('image/')) {
                     const blob = item.getAsFile();
-                    updatePreview(blob);
+                    const targetInput = document.getElementById(activeInputId);
+                    updatePreview(blob, activeInputId);
                     const dataTransfer = new DataTransfer();
                     dataTransfer.items.add(blob);
-                    fotoInput.files = dataTransfer.files;
+                    targetInput.files = dataTransfer.files;
                 }
             }
+        });
+
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', function() {
+                if(this.id !== 'inEsquemas') updatePreview(this.files[0], this.id);
+            });
         });
     });
 </script>
