@@ -12,7 +12,7 @@ class Empresas extends Model
     protected $table = 'empresas';
     protected $primaryKey = 'id_empresa';
     protected $fillable = ['nombre', 'encargado', 'foto', 'ubicacion', 'calendario', 'esquemas', 'especificaciones', 'correo'];
-
+    protected $casts = ['esquemas' => 'array',];
     // Relación: Una empresa tiene muchos meses (1 a Muchos)
     public function meses()
     {

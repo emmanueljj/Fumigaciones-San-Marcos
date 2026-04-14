@@ -137,14 +137,14 @@
                             </div>
                         </div>
 
-                        {{-- ICONO PDF CONTROL PERIMETRAL --}}
-                        @if($servicio->controlPerimetral)
-                            <a href="{{ asset('storage/' . $servicio->controlPerimetral) }}" 
-                               target="_blank" 
-                               class="btn-pdf-perimetral" 
-                               title="Ver Control Perimetral">
-                                <i class="fa-solid fa-file-pdf"></i>
-                                <span style="font-size: 0.65rem; font-weight: bold; display: block; margin-top: -3px;">PDF</span>
+                        {{-- ICONO IMÁGENES CONTROL PERIMETRAL --}}
+                        @if(is_array($servicio->controlPerimetral) && count($servicio->controlPerimetral) > 0)
+                            <a href="{{ asset('storage/' . $servicio->controlPerimetral[0]) }}" 
+                            target="_blank" 
+                            class="btn-pdf-perimetral" 
+                            title="Ver Control Perimetral ({{ count($servicio->controlPerimetral) }} páginas)">
+                                <i class="fa-solid fa-images"></i>
+                                <span style="font-size: 0.65rem; font-weight: bold; display: block;">Perimetral</span>
                             </a>
                         @endif
 

@@ -21,41 +21,54 @@ class EmpresasController extends Controller
     /**
      * Procesa la validación y el almacenamiento de archivos
      */
-    private function validarYProcesar(Request $request, $empresa = null) 
-    {
-        // 1. Validar campos (Calendario y Especificaciones ahora son estrictamente imágenes)
+    private function validarYProcesar(Request $request, $empresa = null) {
+        
         $request->validate([
             'nombre'           => 'required|string|max:255',
             'encargado'        => 'required|string|max:255',
             'correo'           => 'required|email|max:255',
             'ubicacion'        => 'nullable|string|max:500',
             'fotoEmpresa'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
-            'calendario'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096', // Solo Imagen
-            'esquemas'         => 'nullable|mimes:pdf|max:5120', // Solo PDF (Plano técnico)
-            'especificaciones' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096', // Solo Imagen
+            'calendario'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'especificaciones' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            // CAMBIO: Ahora validamos un array de imágenes
+            'esquemas'         => 'nullable|array',
+            'esquemas.*'       => 'image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
         $datos = $request->only(['nombre', 'encargado', 'correo', 'ubicacion']);
 
-        // 2. Mapeo de inputs de formulario a columnas de la base de datos
-        $archivos = [
+        // Procesar archivos únicos (foto, calendario, especificaciones)
+        $archivosUnicos = [
             'fotoEmpresa'      => 'foto',
             'calendario'       => 'calendario',
-            'esquemas'         => 'esquemas',
             'especificaciones' => 'especificaciones'
         ];
 
-        foreach ($archivos as $input => $columna) {
+        foreach ($archivosUnicos as $input => $columna) {
             if ($request->hasFile($input)) {
-                // Borrar archivo anterior si existe y no es el perfil por defecto
                 if ($empresa && $empresa->$columna && $empresa->$columna !== 'fotos/profile.jpg') {
                     Storage::disk('public')->delete($empresa->$columna);
                 }
-                
-                // Determinamos la carpeta según el tipo de archivo para orden
                 $folder = ($input === 'fotoEmpresa') ? 'fotos_perfil' : 'documentos_empresas';
                 $datos[$columna] = $request->file($input)->store($folder, 'public');
             }
+        }
+
+        // PROCESAR MÚLTIPLES ESQUEMAS (JSON)
+        if ($request->hasFile('esquemas')) {
+            // Borrar esquemas anteriores si es edición
+            if ($empresa && is_array($empresa->esquemas)) {
+                foreach ($empresa->esquemas as $viejo) {
+                    Storage::disk('public')->delete($viejo);
+                }
+            }
+
+            $rutasEsquemas = [];
+            foreach ($request->file('esquemas') as $file) {
+                $rutasEsquemas[] = $file->store('documentos_empresas/esquemas', 'public');
+            }
+            $datos['esquemas'] = $rutasEsquemas; // El casting lo guarda como JSON
         }
 
         return $datos;

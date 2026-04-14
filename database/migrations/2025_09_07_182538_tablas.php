@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('ubicacion')->nullable();
             $table->string('foto')->nullable();
             $table->string('calendario')->nullable();
-            $table->string('esquemas')->nullable();
+            $table->json('esquemas')->nullable();
             $table->string('especificaciones')->nullable();
             $table->timestamps();
         });
@@ -26,7 +26,7 @@ return new class extends Migration
             $table->id('id_pr');
             $table->string('nombre');
             $table->string('concentracion');
-            $table->string('fichaTecnica');
+            $table->json('fichaTecnica')->nullable();
             $table->timestamps();
         });
 
@@ -54,7 +54,7 @@ return new class extends Migration
             $table->unsignedBigInteger('id_mes');
             $table->foreign('id_mes')->references('id_mes')->on('meses')->onDelete('cascade');
             $table->text('observacion')->nullable();
-            $table->text('controlPerimetral')->nullable();
+            $table->json('controlPerimetral')->nullable();
             $table->timestamps();
         });
 

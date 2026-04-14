@@ -121,9 +121,9 @@
                     <i class="fa-solid fa-percent me-1"></i> {{ $producto->concentracion }}
                 </span>
 
-                @if($producto->fichaTecnica)
-                    <a href="{{ asset('storage/' . $producto->fichaTecnica) }}" target="_blank" class="spec-chip chip-file" title="Ver Ficha Técnica">
-                        <i class="fa-solid fa-file-pdf"></i> Ficha
+                @if(is_array($producto->fichaTecnica) && count($producto->fichaTecnica) > 0)
+                    <a href="{{ asset('storage/' . $producto->fichaTecnica[0]) }}" target="_blank" title="Ver primera página">
+                        <i class="fa-solid fa-images"></i> Ficha ({{ count($producto->fichaTecnica) }} págs)
                     </a>
                 @endif
             </div>

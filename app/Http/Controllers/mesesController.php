@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\empresas;
+use App\Models\Empresas;
 use Illuminate\Http\Request;
 use App\Models\Meses;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
@@ -98,12 +98,12 @@ class mesesController extends Controller
     public function verMeses($id_empresa)
         {
             $meses = Meses::where('id_empresa', $id_empresa)->orderBy('fecha_I', 'asc')->get();
-            $empresa = empresas::find($id_empresa); // o ->where('id_empresa', $id_empresa)->first();
+            $empresa = Empresas::find($id_empresa); // o ->where('id_empresa', $id_empresa)->first();
             return view('meses', compact('meses', 'empresa'));
         }
 
     public function ag_meses($id_empresa) {
-            $empresa = empresas::find($id_empresa);
+            $empresa = Empresas::find($id_empresa);
             return view('agregar.agMes', compact('empresa'));
         }
   // =================================================================
@@ -186,36 +186,49 @@ class mesesController extends Controller
         }
     }
    // =================================================================
-public function generarPDF($id_mes) {
+    public function generarPDF($id_mes) {
+        $mes = Meses::with(['relEmpresa', 'servicios.productos'])->findOrFail($id_mes);
+        $empresa = $mes->relEmpresa;
 
-    $mes = Meses::with([
-        'relEmpresa', 
-        'servicios.tecnicos', 
-        'servicios.productos', 
-        'servicios.actividades'
-    ])->findOrFail($id_mes);
-    
-    // 2. Extraemos la empresa directamente de la relación ya cargada
-    $empresa = $mes->relEmpresa;
+        // Función auxiliar para convertir a Base64 y no fallar en Windows
+        $toBase64 = function($path) {
+            $fullPath = storage_path('app/public/' . $path);
+            if (file_exists($fullPath)) {
+                $type = pathinfo($fullPath, PATHINFO_EXTENSION);
+                $data = file_get_contents($fullPath);
+                return 'data:image/' . $type . ';base64,' . base64_encode($data);
+            }
+            return null;
+        };
 
-    // 3. Preparamos los datos para la vista
-    // 'servicios' ahora contiene objetos con colecciones internas de tecnicos, productos y actividades
-    $data = [
-        'mes'       => $mes,
-        'empresa'   => $empresa,
-        'servicios' => $mes->servicios
-    ];
+        // Procesar Esquemas
+        $esquemasProcesados = [];
+        if (is_array($empresa->esquemas)) {
+            foreach ($empresa->esquemas as $img) {
+                $esquemasProcesados[] = $toBase64($img);
+            }
+        }
 
-    // 4. Generamos el PDF con la vista correspondiente
-    $pdf = PDF::loadView('pdf.reporte_mensual', $data);
+        // Procesar Fichas Técnicas de Productos usados
+        $fichasProcesadas = [];
+        foreach ($mes->servicios as $servicio) {
+            foreach ($servicio->productos as $producto) {
+                if (is_array($producto->fichaTecnica)) {
+                    foreach ($producto->fichaTecnica as $img) {
+                        $fichasProcesadas[] = $toBase64($img);
+                    }
+                }
+            }
+        }
+        
+        $pdf = PDF::loadView('pdf.reporte_mensual', [
+            'mes'       => $mes,
+            'empresa'   => $empresa,
+            'servicios' => $mes->servicios, // <--- ¡ESTA ES LA LÍNEA QUE FALTA!
+            'esquemas'  => $esquemasProcesados,
+            'fichas'    => $fichasProcesadas
+        ]);
 
-    // Configuración de página: A4 vertical para reportes técnicos
-    $pdf->setPaper('a4', 'portrait');
-
-    // 5. Retornamos el stream para previsualización
-    // Usamos el nombre de la empresa y el mes para el nombre del archivo
-    $filename = "Reporte_" . str_replace(' ', '_', $empresa->nombre) . "_{$mes->nombre}.pdf";
-    
-    return $pdf->stream($filename);
-}
+        return $pdf->stream("Reporte_{$empresa->nombre}.pdf");
+    }
 }

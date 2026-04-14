@@ -3,14 +3,14 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\tecnicos;
+use App\Models\Tecnicos;
 use Illuminate\Validation\ValidationException;
 
 
 class tecnicosController extends Controller
 {
     public function tecnicos() {
-            $tecnicos = tecnicos::orderBy('updated_at','desc')->paginate(10);
+            $tecnicos = Tecnicos::orderBy('updated_at','desc')->paginate(10);
             return view('tecnicos', compact('tecnicos'));
     }
 
@@ -35,7 +35,7 @@ class tecnicosController extends Controller
             ->withInput();
     }
 
-        $otroRegistroMismaClave = tecnicos::where('clave', $request->clave)->first();
+        $otroRegistroMismaClave = Tecnicos::where('clave', $request->clave)->first();
 
         if ($otroRegistroMismaClave) {
             return redirect()->back()
@@ -43,7 +43,7 @@ class tecnicosController extends Controller
                 ->with('mostrarModal', true)
                 ->withInput();
         }
-        tecnicos::create([
+        Tecnicos::create([
             'nombre' => $request->nombre,
             'clave' => $request->clave,
         ]);
@@ -53,7 +53,7 @@ class tecnicosController extends Controller
 
   // =================================================================
     public function edTecnico($id_tec){
-        $tec_mod = tecnicos::where('id_tec', $id_tec)->first();
+        $tec_mod = Tecnicos::where('id_tec', $id_tec)->first();
         if (!$tec_mod) {
             return redirect()->back()->with('error', 'Técnico no encontrado');
         }
@@ -78,7 +78,7 @@ class tecnicosController extends Controller
                 ->withInput();
         }
 
-        $tec_new = tecnicos::findOrFail($tec_mod);
+        $tec_new = Tecnicos::findOrFail($tec_mod);
 
         $tec_new->update([
             'nombre' => $request->input('nombre'),
@@ -90,7 +90,7 @@ class tecnicosController extends Controller
    // =================================================================
     public function delTecnicos($id_tec){
         try {
-            $registro = tecnicos::findOrFail($id_tec);
+            $registro = Tecnicos::findOrFail($id_tec);
             $registro->delete();
             
             return redirect()->back()
@@ -103,7 +103,7 @@ class tecnicosController extends Controller
 
     public function buscar(Request $request) {
         $term = $request->q;
-        $tecnicos = tecnicos::where('nombre', 'LIKE', "%$term%")->get();
+        $tecnicos = Tecnicos::where('nombre', 'LIKE', "%$term%")->get();
 
         return response()->json($tecnicos->map(function($p) {
             return [

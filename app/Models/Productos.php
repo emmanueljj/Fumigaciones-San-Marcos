@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class productos extends Model
+class Productos extends Model
 {
     protected $table = 'productos';
     protected $primaryKey = 'id_pr';
     protected $fillable = ['nombre', 'concentracion', 'fichaTecnica'];
-
+    protected $casts = ['fichaTecnica' => 'array',];
+    
     public function servicios()
     {
         return $this->belongsToMany(

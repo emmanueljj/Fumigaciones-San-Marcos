@@ -35,24 +35,25 @@ class ServiciosController extends Controller
     /**
      * Método centralizado para validar datos y procesar archivos técnicos
      */
-    private function validarYProcesar(Request $request, $id_mes, $servicio = null)
-    {
+    private function validarYProcesar(Request $request, $id_mes, $servicio = null){
+        
         try {
             $request->validate([
-                'fecha'             => 'required|date',
-                'observacion'       => 'nullable|string',
-                'controlPerimetral' => 'nullable|mimes:pdf,jpg,jpeg,png|max:4096',
-                'productos'         => 'nullable|array', // Validamos que lleguen como array
-                'tecnicos'          => 'nullable|array',
+                'fecha'               => 'required|date',
+                'observacion'         => 'nullable|string',
+                // CAMBIO: Ahora validamos que sea un array de imágenes
+                'controlPerimetral'   => 'nullable|array',
+                'controlPerimetral.*' => 'image|mimes:jpg,jpeg,png,webp|max:5120', 
+                'productos'           => 'nullable|array',
+                'tecnicos'            => 'nullable|array',
             ]);
         } catch (ValidationException $e) {
             throw ValidationException::withMessages([
-                'errorMensaje' => 'Verifica la fecha y los archivos seleccionados (Solo PDF/Imagen).',
+                'errorMensaje' => 'Verifica la fecha y que los archivos sean imágenes válidas (JPG, PNG).',
                 'mostrarModal' => true
             ]);
         }
 
-        // Validación de rango de fecha respecto al mes
         $mes = Meses::findOrFail($id_mes);
         $fecha = Carbon::parse($request->fecha);
         if ($fecha->lt(Carbon::parse($mes->fecha_I)) || $fecha->gt(Carbon::parse($mes->fecha_f))) {
@@ -62,12 +63,23 @@ class ServiciosController extends Controller
         $datos = $request->only(['fecha', 'observacion']);
         $datos['id_mes'] = $id_mes;
 
-        // Procesar archivo de Control Perimetral
+        // PROCESAR MÚLTIPLES IMÁGENES
         if ($request->hasFile('controlPerimetral')) {
-            if ($servicio && $servicio->controlPerimetral) {
-                Storage::disk('public')->delete($servicio->controlPerimetral);
+            // 1. Si es una edición y ya existen imágenes, las eliminamos del disco
+            if ($servicio && is_array($servicio->controlPerimetral)) {
+                foreach ($servicio->controlPerimetral as $archivoViejo) {
+                    Storage::disk('public')->delete($archivoViejo);
+                }
             }
-            $datos['controlPerimetral'] = $request->file('controlPerimetral')->store('controles_perimetrales', 'public');
+
+            // 2. Guardamos las nuevas imágenes y recolectamos sus rutas
+            $rutasImagenes = [];
+            foreach ($request->file('controlPerimetral') as $file) {
+                $rutasImagenes[] = $file->store('controles_perimetrales', 'public');
+            }
+
+            // 3. Asignamos el array de rutas (el casting en el Modelo lo convertirá a JSON)
+            $datos['controlPerimetral'] = $rutasImagenes;
         }
 
         return $datos;
